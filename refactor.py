@@ -1,4 +1,5 @@
 from bowler import Query
+from common import logger
 
 __all__ = [
     'refactor_demo',
