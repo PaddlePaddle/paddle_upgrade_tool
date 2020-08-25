@@ -17,5 +17,5 @@ def _build_default_logger():
 
     return logger
 
-log_format = logging.Formatter('%(asctime)s - %(filename)s:%(lineno)d - %(levelname)s - %(message)s', datefmt='%Y-%m-%d_%H-%M-%S')
+log_format = logging.Formatter('%(asctime)s - %(filename)s:%(lineno)d - %(levelname)s - %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
 logger = _build_default_logger()
