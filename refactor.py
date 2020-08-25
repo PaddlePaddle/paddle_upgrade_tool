@@ -1,6 +1,7 @@
 from bowler import Query
 from common import logger
 
+# don't change the order if you don't know what you are doing.
 __all__ = [
     'refactor_demo',
     'refactor_import',
