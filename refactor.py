@@ -1,6 +1,6 @@
 from bowler import Query
 from bowler.helpers import power_parts, quoted_parts, dotted_parts
-from bowler.types import LN, Capture, Filename, SYMBOL
+from bowler.types import LN, Capture, Filename, SYMBOL, TOKEN
 from fissix.pytree import Leaf, Node, type_repr
 from fissix.fixer_util import Attr, Comma, Dot, LParen, Name, Newline, RParen
 
@@ -97,12 +97,14 @@ def refactor_import(q: Query, change_spec) -> "Query":
             if filename not in _imports_full_name:
                 _imports_full_name[filename] = {}
             if 'module_imports' in capture:
-                old_name = str(capture['module_imports']).strip()
-                new_name = str(capture['module_name']).strip() + '.' + old_name
+                for leaf in capture['module_imports']:
+                    if leaf.type == TOKEN.NAME:
+                        old_name = leaf.value.strip()
+                        new_name = str(capture['module_name']).strip() + '.' + old_name
+                        _imports_full_name[filename][old_name] = new_name
             if 'module_nickname' in capture:
                 old_name = str(capture['module_nickname']).strip()
                 new_name = str(capture['module_name']).strip()
-            if old_name != new_name:
                 _imports_full_name[filename][old_name] = new_name
             return False
         return True
