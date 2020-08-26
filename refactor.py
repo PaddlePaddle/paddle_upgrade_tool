@@ -26,6 +26,7 @@ def refactor_import(q: Query, change_spec) -> "Query":
     3. remove "import paddle.module as mod", and convert "mod.api" to "paddle.mod.api"
     4. remove "from paddle.module import api", and convert "api" to "paddle.module.api"
     """
+    q.select_module()
     return q
 
 def norm_api_alias(q: Query, change_spec) -> "Query":

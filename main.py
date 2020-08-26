@@ -9,6 +9,7 @@ from bowler import Query
 import refactor
 from refactor import *
 from spec import change_spec
+import filters
 
 def should_convert():
     """
@@ -27,6 +28,7 @@ def main():
     parser.add_argument("--inpath", required=True, type=str, help='The file or directory path you want to upgrade.')
     parser.add_argument("--write", action='store_true', default=False, help='Modify files in place.')
     parser.add_argument("--refactor", action='append', choices=refactor.__all__, help='This is a debug option. Specify refactor you want to run. If none, all refactors will be run.')
+    parser.add_argument("--print-match", action='store_true', default=False, help='This is a debug option. Print matched code and node for each file.')
 
     args = parser.parse_args()
     if args.refactor:
@@ -49,7 +51,11 @@ def main():
             continue
         assert callable(refactor_func), "{} is not callable.".format(fn)
         logger.debug("run refactor: {}".format(fn))
-        refactor_func(q, change_spec)
+        if args.print_match:
+            refactor_func(q, change_spec).filter(filters.print_match)
+        else:
+            refactor_func(q, change_spec)
+
 
     if args.write:
         # print diff to stdout, and modify file in place.
