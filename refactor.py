@@ -1,4 +1,8 @@
 from bowler import Query
+from bowler.helpers import power_parts, quoted_parts, dotted_parts
+from bowler.types import LN, Capture, Filename, SYMBOL
+from fissix.pytree import Leaf, Node, type_repr
+from fissix.fixer_util import Attr, Comma, Dot, LParen, Name, Newline, RParen
 
 from common import logger
 import processors
@@ -32,8 +36,167 @@ def refactor_import(q: Query, change_spec) -> "Query":
     4. remove "from paddle.module import api", and convert "api" to "paddle.module.api"
     """
 
-    #q.fixer(MyFixer)
-    q.select_module('paddle')
+    # select import_name and import_from
+    pattern = """
+        (
+            import_name< 'import'
+                (
+                    module_name='{name}'
+                |
+                    module_name=dotted_name< {dotted_name} any* >
+                |
+                    dotted_as_name<
+                        (
+                            module_name='{name}'
+                        |
+                            module_name=dotted_name< {dotted_name} any* >
+                        )
+                        'as' module_nickname=any
+                    >
+                )
+            >
+        |
+            import_from< 'from'
+                (
+                    module_name='{name}'
+                |
+                    module_name=dotted_name< {dotted_name} any* >
+                )
+                'import' ['(']
+                (
+                    import_as_name<
+                        module_import=any
+                        'as'
+                        module_nickname=any
+                    >*
+                |
+                    import_as_names<
+                        module_imports=any*
+                    >
+                |
+                    module_import=any
+                )
+             [')'] >
+        |
+             module_name=power<
+                [TOKEN]
+                any
+                module_access=trailer< any* >*
+            >
+        )
+    """
+    _kwargs = {}
+    _kwargs['name'] = 'paddle'
+    _kwargs["dotted_name"] = " ".join(quoted_parts(_kwargs["name"]))
+    _kwargs["power_name"] = " ".join(power_parts(_kwargs["name"]))
+    pattern = pattern.format(**_kwargs)
+    _imports_full_name = {}
+
+    def _find_imports(node: LN, capture: Capture, filename: Filename) -> bool:
+        if capture and ('module_imports' in capture or 'module_nickname' in capture):
+            if filename not in _imports_full_name:
+                _imports_full_name[filename] = {}
+            if 'module_imports' in capture:
+                old_name = str(capture['module_imports']).strip()
+                new_name = str(capture['module_name']).strip() + '.' + old_name
+            if 'module_nickname' in capture:
+                old_name = str(capture['module_nickname']).strip()
+                new_name = str(capture['module_name']).strip()
+            if old_name != new_name:
+                _imports_full_name[filename][old_name] = new_name
+            return False
+        return True
+
+    q.select(pattern).filter(_find_imports)
+
+    def _rename(node: LN, capture: Capture, filename: Filename) -> None:
+        if filename not in _imports_full_name:
+            return
+        logger.debug(f"{filename} [{list(capture)}]: {node}")
+
+        rename_dict = _imports_full_name[filename]
+        # If two keys reference the same underlying object, do not modify it twice
+        visited: List[LN] = []
+        for _key, value in capture.items():
+            logger.debug(f"{_key}: {value}")
+            if value in visited:
+                continue
+            visited.append(value)
+
+            if isinstance(value, Leaf) and value.type == TOKEN.NAME:
+                if value.value in rename_dict:
+                    # find old_name and new_name
+                    old_name = value.value
+                    new_name = rename_dict[old_name]
+                    if value.parent is not None:
+                        value.replace(Name(new_name, prefix=value.prefix))
+                        break
+            elif isinstance(value, Node):
+                # find old_name and new_name
+                code = str(value).strip()
+                old_name = None
+                for k, _ in rename_dict.items():
+                    if not code.startswith(k):
+                        continue
+                    if old_name is None:
+                        old_name = k
+                    if len(k) > len(old_name):
+                        old_name = k
+                if old_name is None:
+                    continue
+                new_name = rename_dict[old_name]
+
+                if type_repr(value.type) == "dotted_name":
+                    dp_old = dotted_parts(old_name)
+                    dp_new = dotted_parts(new_name)
+                    parts = zip(dp_old, dp_new, value.children)
+                    for old, new, leaf in parts:
+                        if old != leaf.value:
+                            break
+                        if old != new:
+                            leaf.replace(Name(new, prefix=leaf.prefix))
+
+                    if len(dp_new) < len(dp_old):
+                        # if new path is shorter, remove excess children
+                        del value.children[len(dp_new) : len(dp_old)]
+                    elif len(dp_new) > len(dp_old):
+                        # if new path is longer, add new children
+                        children = [
+                            Name(new) for new in dp_new[len(dp_old) : len(dp_new)]
+                        ]
+                        value.children[len(dp_old) : len(dp_old)] = children
+
+                elif type_repr(value.type) == "power":
+                    # We don't actually need the '.' so just skip it
+                    dp_old = old_name.split(".")
+                    dp_new = new_name.split(".")
+
+                    for old, new, leaf in zip(dp_old, dp_new, value.children):
+                        if isinstance(leaf, Node):
+                            name_leaf = leaf.children[1]
+                        else:
+                            name_leaf = leaf
+                        if old != name_leaf.value:
+                            break
+                        name_leaf.replace(Name(new, prefix=name_leaf.prefix))
+
+                    if len(dp_new) < len(dp_old):
+                        # if new path is shorter, remove excess children
+                        del value.children[len(dp_new) : len(dp_old)]
+                    elif len(dp_new) > len(dp_old):
+                        # if new path is longer, add new trailers in the middle
+                        for i in range(len(dp_old), len(dp_new)):
+                            value.insert_child(
+                                i, Node(SYMBOL.trailer, [Dot(), Name(dp_new[i])])
+                            )
+    q.modify(_rename)
+    # change module_access
+    pass
+    # add "import paddle" if needed
+    pass
+    # remove import_name and import_from
+    pass
+    #q.select_module('paddle')
     return q
 
 def norm_api_alias(q: Query, change_spec) -> "Query":
