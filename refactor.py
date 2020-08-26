@@ -1,5 +1,8 @@
 from bowler import Query
+
 from common import logger
+import processors
+import fixers
 
 # don't change the order if you don't know what you are doing.
 __all__ = [
@@ -16,17 +19,21 @@ __all__ = [
     ]
 
 def refactor_demo(q: Query, change_spec) -> "Query":
-    q.select_function("old_api").is_call().rename("new_api")
+    q.select_function("old_api").is_call().rename("new_api").process(processors.demo_post_processor)
+
+    #q.fixer(fixers.FixerDemo)
     return q
 
 def refactor_import(q: Query, change_spec) -> "Query":
     """
     1. add "import paddle" if needed.
     2. remove "import paddle.mod" if needed.
-    3. remove "import paddle.module as mod", and convert "mod.api" to "paddle.mod.api"
+    3. remove "import paddle.module as mod", and convert "mod.api" to "paddle.module.api"
     4. remove "from paddle.module import api", and convert "api" to "paddle.module.api"
     """
-    q.select_module()
+
+    #q.fixer(MyFixer)
+    q.select_module('paddle')
     return q
 
 def norm_api_alias(q: Query, change_spec) -> "Query":
