@@ -3,6 +3,9 @@ from bowler.helpers import power_parts, quoted_parts, dotted_parts
 from bowler.types import LN, Capture, Filename, SYMBOL, TOKEN
 from fissix.pytree import Leaf, Node, type_repr
 from fissix.fixer_util import Attr, Comma, Dot, LParen, Name, Newline, RParen, KeywordArg
+from fissix.fixer_util import is_import, touch_import, find_root
+from fissix.pygram import python_grammar
+
 
 from common import logger
 import processors
@@ -39,7 +42,11 @@ def refactor_import(q: Query, change_spec) -> "Query":
     # select import_name and import_from
     pattern = """
         (
-            import_name< 'import'
+            file_input< any* >
+         |
+            name_import=import_name< 'import' '{name}' >
+         |
+            as_import=import_name< 'import'
                 (
                     module_name='{name}'
                 |
@@ -56,7 +63,7 @@ def refactor_import(q: Query, change_spec) -> "Query":
                 )
             >
         |
-            import_from< 'from'
+            from_import=import_from< 'from'
                 (
                     module_name='{name}'
                 |
@@ -78,11 +85,7 @@ def refactor_import(q: Query, change_spec) -> "Query":
                 )
              [')'] >
         |
-             module_name=power<
-                [TOKEN]
-                any
-                module_access=trailer< any* >*
-            >
+             leaf_node=NAME
         )
     """
     _kwargs = {}
@@ -90,115 +93,91 @@ def refactor_import(q: Query, change_spec) -> "Query":
     _kwargs["dotted_name"] = " ".join(quoted_parts(_kwargs["name"]))
     _kwargs["power_name"] = " ".join(power_parts(_kwargs["name"]))
     pattern = pattern.format(**_kwargs)
-    _imports_full_name = {}
+
+    imports_map = {}
+    paddle_imported = False
+    paddle_found = False
 
     def _find_imports(node: LN, capture: Capture, filename: Filename) -> bool:
+        nonlocal paddle_imported, paddle_found
+        if not is_import(node):
+            return True
+        if capture and 'name_import' in capture:
+            paddle_imported = True
+            paddle_found = True
         if capture and ('module_imports' in capture or 'module_nickname' in capture):
-            if filename not in _imports_full_name:
-                _imports_full_name[filename] = {}
+            paddle_found = True
+            if filename not in imports_map:
+                imports_map[filename] = {}
             if 'module_imports' in capture:
                 for leaf in capture['module_imports']:
                     if leaf.type == TOKEN.NAME:
                         old_name = leaf.value.strip()
                         new_name = str(capture['module_name']).strip() + '.' + old_name
-                        _imports_full_name[filename][old_name] = new_name
+                        imports_map[filename][old_name] = new_name
             if 'module_nickname' in capture:
                 old_name = str(capture['module_nickname']).strip()
                 new_name = str(capture['module_name']).strip()
-                _imports_full_name[filename][old_name] = new_name
-            return False
+                imports_map[filename][old_name] = new_name
         return True
 
     q.select(pattern).filter(_find_imports)
-
+    # convert to full module path
     def _rename(node: LN, capture: Capture, filename: Filename) -> None:
-        if filename not in _imports_full_name:
+        if not (isinstance(node, Leaf) and node.type == TOKEN.NAME):
+            return
+        if filename not in imports_map:
             return
         logger.debug(f"{filename} [{list(capture)}]: {node}")
 
-        rename_dict = _imports_full_name[filename]
-        # If two keys reference the same underlying object, do not modify it twice
-        visited: List[LN] = []
-        for _key, value in capture.items():
-            logger.debug(f"{_key}: {value}")
-            if value in visited:
-                continue
-            visited.append(value)
+        # skip import statement
+        p = node.parent
+        while p is not None:
+            if p.type in {SYMBOL.import_name, SYMBOL.import_from}:
+                return
+            p = p.parent
+        # skip if it's already a full module path
+        if node.prev_sibling is not None and node.prev_sibling.type == TOKEN.DOT:
+            return
 
-            if isinstance(value, Leaf) and value.type == TOKEN.NAME:
-                if value.value in rename_dict:
-                    # find old_name and new_name
-                    old_name = value.value
-                    new_name = rename_dict[old_name]
-                    if value.parent is not None:
-                        value.replace(Name(new_name, prefix=value.prefix))
-                        break
-            elif isinstance(value, Node):
-                # find old_name and new_name
-                code = str(value).strip()
-                old_name = None
-                for k, _ in rename_dict.items():
-                    if not code.startswith(k):
-                        continue
-                    if old_name is None:
-                        old_name = k
-                    if len(k) > len(old_name):
-                        old_name = k
-                if old_name is None:
-                    continue
-                new_name = rename_dict[old_name]
-
-                if type_repr(value.type) == "dotted_name":
-                    dp_old = dotted_parts(old_name)
-                    dp_new = dotted_parts(new_name)
-                    parts = zip(dp_old, dp_new, value.children)
-                    for old, new, leaf in parts:
-                        if old != leaf.value:
-                            break
-                        if old != new:
-                            leaf.replace(Name(new, prefix=leaf.prefix))
-
-                    if len(dp_new) < len(dp_old):
-                        # if new path is shorter, remove excess children
-                        del value.children[len(dp_new) : len(dp_old)]
-                    elif len(dp_new) > len(dp_old):
-                        # if new path is longer, add new children
-                        children = [
-                            Name(new) for new in dp_new[len(dp_old) : len(dp_new)]
-                        ]
-                        value.children[len(dp_old) : len(dp_old)] = children
-
-                elif type_repr(value.type) == "power":
-                    # We don't actually need the '.' so just skip it
-                    dp_old = old_name.split(".")
-                    dp_new = new_name.split(".")
-
-                    for old, new, leaf in zip(dp_old, dp_new, value.children):
-                        if isinstance(leaf, Node):
-                            name_leaf = leaf.children[1]
-                        else:
-                            name_leaf = leaf
-                        if old != name_leaf.value:
-                            break
-                        name_leaf.replace(Name(new, prefix=name_leaf.prefix))
-
-                    if len(dp_new) < len(dp_old):
-                        # if new path is shorter, remove excess children
-                        del value.children[len(dp_new) : len(dp_old)]
-                    elif len(dp_new) > len(dp_old):
-                        # if new path is longer, add new trailers in the middle
-                        for i in range(len(dp_old), len(dp_new)):
-                            value.insert_child(
-                                i, Node(SYMBOL.trailer, [Dot(), Name(dp_new[i])])
-                            )
+        rename_dict = imports_map[filename]
+        if node.value in rename_dict:
+            # find old_name and new_name
+            old_name = node.value
+            new_name = rename_dict[old_name]
+            if node.parent is not None:
+                new_node = Name(new_name, prefix=node.prefix)
+                node.replace(new_node)
     q.modify(_rename)
-    # change module_access
-    pass
+
+    # remove as_import and from_import
+    def _remove(node: LN, capture: Capture, filename: Filename) -> None:
+        if not is_import(node):
+            return
+        _node = capture.get('as_import', None) or capture.get('from_import', None)
+        if _node is not None:
+            prefix = _node.prefix
+            p = _node.parent
+            _node.remove()
+            # delete NEWLINE node after delete as_import or from_import
+            if p and p.children and len(p.children) == 1 and p.children[0].type == TOKEN.NEWLINE:
+                p.children[0].remove()
+                # restore comment
+                p.next_sibling.prefix = prefix + p.next_sibling.prefix
+    q.modify(_remove)
+
     # add "import paddle" if needed
-    pass
-    # remove import_name and import_from
-    pass
-    #q.select_module('paddle')
+    def _add(node: LN, capture: Capture, filename: Filename) -> None:
+        nonlocal paddle_imported, paddle_found
+        if node.type != SYMBOL.file_input:
+            return
+        if paddle_imported:
+            return
+        if paddle_found:
+            touch_import(None, 'paddle', node)
+            paddle_imported = True
+    q.modify(_add)
+
     return q
 
 def norm_api_alias(q: Query, change_spec) -> "Query":

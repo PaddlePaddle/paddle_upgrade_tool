@@ -9,7 +9,7 @@ def log_to_file(log_filepath="report.log"):
 
 def _build_default_logger():
     logger = logging.getLogger('paddle1to2')
-    logger.setLevel("DEBUG")
+    logger.setLevel("INFO")
     
     console_handler = logging.StreamHandler(stream=sys.stdout) # default stream is sys.stderr
     console_handler.setFormatter(log_format)
