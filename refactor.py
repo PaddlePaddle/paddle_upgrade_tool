@@ -242,30 +242,27 @@ def args_to_kwargs(q:Query, change_spec) -> "Query":
                     func_name = func_name + l.value
         return func_name
 
-    def _filter_func(node, capture, fu):
-        name = capture["name"]
-        func_name = _get_func_name(name)
-        return func_name in change_spec
-
     def _modify_args_to_kwargs(node, capture, fn):
         args = capture["arglist"]
         name = capture["name"]
         func_name = _get_func_name(name)
 
-        print(func_name)
+        if func_name not in change_spec:
+            return
+
         arg_list = change_spec[func_name]['args_list']
         if args and args[0].type == SYMBOL.arglist:
             child = args[0].children
 
         index = 0
-        for x in child:
-            if x.type == SYMBOL.argument:
+        for ln in child:
+            if ln.type == SYMBOL.argument:
                 index = index + 1
-            elif x.type != TOKEN.COMMA:
-                x.replace(KeywordArg(Name(arg_list[index]), x.clone()))
+            elif ln.type != TOKEN.COMMA:
+                ln.replace(KeywordArg(Name(arg_list[index]), ln.clone()))
                 index = index + 1
 
-    q.select(pattern).filter(_filter_func).modify(_modify_args_to_kwargs)
+    q.select(pattern).modify(_modify_args_to_kwargs)
 
     return q
 
