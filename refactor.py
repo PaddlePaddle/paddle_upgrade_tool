@@ -2,7 +2,7 @@ from bowler import Query
 from bowler.helpers import power_parts, quoted_parts, dotted_parts
 from bowler.types import LN, Capture, Filename, SYMBOL, TOKEN
 from fissix.pytree import Leaf, Node, type_repr
-from fissix.fixer_util import Attr, Comma, Dot, LParen, Name, Newline, RParen
+from fissix.fixer_util import Attr, Comma, Dot, LParen, Name, Newline, RParen, KeywordArg
 
 from common import logger
 import processors
@@ -227,6 +227,46 @@ def args_to_kwargs(q:Query, change_spec) -> "Query":
         a = path.to.api(x=1, y=2)
         ```
     """
+    pattern = """
+    (
+        power< name=any* trailer<  '(' arglist=any* ')' > >
+    )
+    """
+    def _get_func_name(lns: list):
+        func_name = ""
+        for ln in lns:
+            if isinstance(ln, Leaf):
+                func_name = func_name + ln.value
+            elif isinstance(ln, Node):
+                for l in ln.leaves():
+                    func_name = func_name + l.value
+        return func_name
+
+    def _filter_func(node, capture, fu):
+        name = capture["name"]
+        func_name = _get_func_name(name)
+        return func_name in change_spec
+
+    def _modify_args_to_kwargs(node, capture, fn):
+        args = capture["arglist"]
+        name = capture["name"]
+        func_name = _get_func_name(name)
+
+        print(func_name)
+        arg_list = change_spec[func_name]['args_list']
+        if args and args[0].type == SYMBOL.arglist:
+            child = args[0].children
+
+        index = 0
+        for x in child:
+            if x.type == SYMBOL.argument:
+                index = index + 1
+            elif x.type != TOKEN.COMMA:
+                x.replace(KeywordArg(Name(arg_list[index]), x.clone()))
+                index = index + 1
+
+    q.select(pattern).filter(_filter_func).modify(_modify_args_to_kwargs)
+
     return q
 
 def args_warning(q:Query, change_spec) -> "Query":
