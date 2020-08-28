@@ -14,22 +14,6 @@ import utils
 
 from fissix.patcomp import PatternCompiler
 
-def ModulePath(module_path: str):
-    """
-    convert module path to Node list, e.g.
-    'path.to.api' -> [Leaf(1, 'path'),
-                      Node(trailer, [Leaf(23, '.'), Leaf(1, 'path')]),
-                      Node(trailer, [Leaf(23, '.'), Leaf(1, 'to')]),
-                      Node(trailer, [Leaf(23, '.'), Leaf(1, 'api')])]
-    """
-    if not module_path:
-        return nodes_list
-    dotted_parts = module_path.split('.')
-    nodes_list = [Name(dotted_parts[0]),]
-    for part in dotted_parts:
-        nodes_list.append(Node(python_symbols.trailer, [Dot(), Name(part)]))
-    return nodes_list
-
 # don't change the order if you don't know what you are doing.
 __all__ = [
     'refactor_demo',
@@ -38,8 +22,7 @@ __all__ = [
     'args_to_kwargs',
     'args_warning',
     'refactor_kwargs',
-    'api_warning',
-    'api_rename',
+    'api_rename_and_warning',
     'refactor_syntax',
     'post_refactor',
     ]
@@ -148,7 +131,7 @@ def refactor_import(q: Query, change_spec) -> "Query":
 
     q.select(pattern).filter(_find_imports)
     # convert to full module path
-    def _rename(node: LN, capture: Capture, filename: Filename) -> None:
+    def _full_module_path(node: LN, capture: Capture, filename: Filename) -> None:
         if not (isinstance(node, Leaf) and node.type == TOKEN.NAME):
             return
         if filename not in imports_map:
@@ -168,20 +151,19 @@ def refactor_import(q: Query, change_spec) -> "Query":
         rename_dict = imports_map[filename]
         if node.value in rename_dict:
             # find old_name and new_name
-            p = node.parent
             old_name = node.value
             new_name = rename_dict[old_name]
             if node.parent is not None:
-                #new_node = Name(new_name, prefix=node.prefix)
                 new_node = utils.code_repr(new_name)
+                new_node.children[0].prefix = node.prefix
                 if node.parent.type == SYMBOL.power:
                     node.replace(new_node.children)
                 else:
                     node.replace(new_node)
-    q.modify(_rename)
+    q.modify(_full_module_path)
 
     # remove as_import and from_import
-    def _remove(node: LN, capture: Capture, filename: Filename) -> None:
+    def _remove_import(node: LN, capture: Capture, filename: Filename) -> None:
         if not is_import(node):
             return
         _node = capture.get('as_import', None) or capture.get('from_import', None)
@@ -194,10 +176,10 @@ def refactor_import(q: Query, change_spec) -> "Query":
                 p.children[0].remove()
                 # restore comment
                 p.next_sibling.prefix = prefix + p.next_sibling.prefix
-    q.modify(_remove)
+    q.modify(_remove_import)
 
     # add "import paddle" if needed
-    def _add(node: LN, capture: Capture, filename: Filename) -> None:
+    def _add_import(node: LN, capture: Capture, filename: Filename) -> None:
         nonlocal paddle_imported, paddle_found
         if node.type != SYMBOL.file_input:
             return
@@ -206,7 +188,7 @@ def refactor_import(q: Query, change_spec) -> "Query":
         if paddle_found:
             touch_import(None, 'paddle', node)
             paddle_imported = True
-    q.modify(_add)
+    q.modify(_add_import)
 
     return q
 
@@ -228,24 +210,8 @@ def norm_api_alias(q: Query, change_spec) -> "Query":
         for alias in v.get('alias', []):
             alias_map[alias] = main_alias
 
-    pattern1 = """ power< 'paddle' trailer< any* >* > """
-    pattern = """ file_input< any* > """
-    pattern = pattern1
-
-    PC = PatternCompiler()
-    _pattern, pattern_tree = PC.compile_pattern(pattern1.strip(), with_tree=True)
-
+    pattern = """ power< 'paddle' trailer< any* >* > """
     def _norm(node: LN, capture: Capture, filename: Filename) -> None:
-        if 'node' in capture:
-            print('capture:', capture)
-            for ln in node.post_order():
-                print(repr(ln))
-                print('-' * 10)
-                results = {'node':ln}
-                if _pattern.match(ln, results):
-                    print("match:", results)
-
-
         code = ''
         for leaf in node.leaves():
             code = code + leaf.value
@@ -258,10 +224,7 @@ def norm_api_alias(q: Query, change_spec) -> "Query":
                 break
         if not found_alias:
             return
-        #print(node, repr(node))
-        #print("node parent:", repr(node.parent))
         utils.replace_module_path(node, alias, alias_map[alias])
-
     q.select(pattern).modify(_norm)
 
     return q
@@ -398,24 +361,58 @@ def refactor_kwargs(q:Query, change_spec) -> "Query":
     """
     return q
 
-def api_warning(q:Query, change_spec) -> "Query":
+def api_rename_and_warning(q:Query, change_spec) -> "Query":
     """
-    print warning if specified api are used.
+    1. rename old api to new api. e.g.
+        origin code snippet:
+            ```
+            a = old_path.old_to.old_api(1, 2)
+            ```
+        refactored code snippet:
+           ```
+           a = new_path.new_to.new_api(1, 2)
+           ```
+    2. print warning if specified api are used.
     """
-    return q
+    # construct api rename mapping and api warning mapping
+    rename_map = {}
+    warning_map = {}
+    for main_alias, v in change_spec.items():
+        new_api_name = v.get('update_to', None)
+        if new_api_name is not None:
+            rename_map[main_alias] = new_api_name
+        warning = v.get('warning', None)
+        if warning is not None:
+            warning_map[main_alias] = warning
 
-def api_rename(q:Query, change_spec) -> "Query":
-    """
-    rename old api to new api. e.g.
-    origin code snippet:
-        ```
-        a = old_path.old_to.old_api(1, 2)
-        ```
-    refactored code snippet:
-        ```
-        a = new_path.new_to.new_api(1, 2)
-        ```
-    """
+    pattern = """ power< 'paddle' trailer< any* >* > """
+    def _rename_and_warning(node: LN, capture: Capture, filename: Filename) -> None:
+        code = ''
+        for leaf in node.leaves():
+            code = code + leaf.value
+        found_rename = False
+        found_warning = False
+        api = None
+        for _api in rename_map.keys():
+            if code.startswith(_api):
+                found_rename = True
+                api = _api
+                break
+        for _api in warning_map.keys():
+            if code.startswith(_api):
+                found_warning = True
+                api = _api
+                break
+        if not found_rename and not found_warning:
+            return
+        # if found rename, replace old_api with new_api
+        if found_rename:
+            utils.replace_module_path(node, api, rename_map[api])
+        # if not found rename and found warning, print warning
+        elif found_warning:
+            logger.warning(warning_map[api])
+    q.select(pattern).modify(_rename_and_warning)
+
     return q
 
 def refactor_syntax(q:Query, change_spec) -> "Query":
