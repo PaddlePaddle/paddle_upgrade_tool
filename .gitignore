@@ -3,3 +3,5 @@
 *.swp
 __pycache__
 __pycache__/*
+cases
+cases/*

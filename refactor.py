@@ -4,12 +4,15 @@ from bowler.types import LN, Capture, Filename, SYMBOL, TOKEN
 from fissix.pytree import Leaf, Node, type_repr
 from fissix.fixer_util import Attr, Comma, Dot, LParen, Name, Newline, RParen, KeywordArg
 from fissix.fixer_util import is_import, touch_import, find_root
-from fissix.pygram import python_grammar
+from fissix.pygram import python_grammar, python_symbols
 
 
 from common import logger
 import processors
 import fixers
+import utils
+
+from fissix.patcomp import PatternCompiler
 
 # don't change the order if you don't know what you are doing.
 __all__ = [
@@ -19,14 +22,13 @@ __all__ = [
     'args_to_kwargs',
     'args_warning',
     'refactor_kwargs',
-    'api_warning',
-    'api_rename',
+    'api_rename_and_warning',
     'refactor_syntax',
     'post_refactor',
     ]
 
 def refactor_demo(q: Query, change_spec) -> "Query":
-    q.select_function("old_api").is_call().rename("new_api").process(processors.demo_post_processor)
+    #q.select_function("old_api").is_call().rename("new_api").process(processors.demo_post_processor)
 
     #q.fixer(fixers.FixerDemo)
     return q
@@ -105,10 +107,16 @@ def refactor_import(q: Query, change_spec) -> "Query":
         if capture and 'name_import' in capture:
             paddle_imported = True
             paddle_found = True
-        if capture and ('module_imports' in capture or 'module_nickname' in capture):
+        if capture and ('module_import' in capture or 'module_imports' in capture or 'module_nickname' in capture):
             paddle_found = True
             if filename not in imports_map:
                 imports_map[filename] = {}
+            if 'module_import' in capture:
+                leaf = capture['module_import']
+                if leaf.type == TOKEN.NAME:
+                    old_name = leaf.value.strip()
+                    new_name = str(capture['module_name']).strip() + '.' + old_name
+                    imports_map[filename][old_name] = new_name
             if 'module_imports' in capture:
                 for leaf in capture['module_imports']:
                     if leaf.type == TOKEN.NAME:
@@ -123,7 +131,7 @@ def refactor_import(q: Query, change_spec) -> "Query":
 
     q.select(pattern).filter(_find_imports)
     # convert to full module path
-    def _rename(node: LN, capture: Capture, filename: Filename) -> None:
+    def _full_module_path(node: LN, capture: Capture, filename: Filename) -> None:
         if not (isinstance(node, Leaf) and node.type == TOKEN.NAME):
             return
         if filename not in imports_map:
@@ -146,12 +154,16 @@ def refactor_import(q: Query, change_spec) -> "Query":
             old_name = node.value
             new_name = rename_dict[old_name]
             if node.parent is not None:
-                new_node = Name(new_name, prefix=node.prefix)
-                node.replace(new_node)
-    q.modify(_rename)
+                new_node = utils.code_repr(new_name)
+                new_node.children[0].prefix = node.prefix
+                if node.parent.type == SYMBOL.power:
+                    node.replace(new_node.children)
+                else:
+                    node.replace(new_node)
+    q.modify(_full_module_path)
 
     # remove as_import and from_import
-    def _remove(node: LN, capture: Capture, filename: Filename) -> None:
+    def _remove_import(node: LN, capture: Capture, filename: Filename) -> None:
         if not is_import(node):
             return
         _node = capture.get('as_import', None) or capture.get('from_import', None)
@@ -164,10 +176,10 @@ def refactor_import(q: Query, change_spec) -> "Query":
                 p.children[0].remove()
                 # restore comment
                 p.next_sibling.prefix = prefix + p.next_sibling.prefix
-    q.modify(_remove)
+    q.modify(_remove_import)
 
     # add "import paddle" if needed
-    def _add(node: LN, capture: Capture, filename: Filename) -> None:
+    def _add_import(node: LN, capture: Capture, filename: Filename) -> None:
         nonlocal paddle_imported, paddle_found
         if node.type != SYMBOL.file_input:
             return
@@ -176,7 +188,7 @@ def refactor_import(q: Query, change_spec) -> "Query":
         if paddle_found:
             touch_import(None, 'paddle', node)
             paddle_imported = True
-    q.modify(_add)
+    q.modify(_add_import)
 
     return q
 
@@ -192,6 +204,29 @@ def norm_api_alias(q: Query, change_spec) -> "Query":
        a = path2.to2.main_alias()
        ```
     """
+    # construct alias mapping
+    alias_map = {}
+    for main_alias, v in change_spec.items():
+        for alias in v.get('alias', []):
+            alias_map[alias] = main_alias
+
+    pattern = """ power< 'paddle' trailer< any* >* > """
+    def _norm(node: LN, capture: Capture, filename: Filename) -> None:
+        code = ''
+        for leaf in node.leaves():
+            code = code + leaf.value
+        found_alias = False
+        alias = None
+        for _alias in alias_map.keys():
+            if code.startswith(_alias):
+                found_alias = True
+                alias = _alias
+                break
+        if not found_alias:
+            return
+        utils.replace_module_path(node, alias, alias_map[alias])
+    q.select(pattern).modify(_norm)
+
     return q
 
 def args_to_kwargs(q:Query, change_spec) -> "Query":
@@ -226,20 +261,45 @@ def args_to_kwargs(q:Query, change_spec) -> "Query":
         name = capture["name"]
         func_name = _get_func_name(name)
 
-        if func_name not in change_spec:
+        if func_name not in change_spec or 'args_list' not in change_spec[func_name]:
             return
 
-        arg_list = change_spec[func_name]['args_list']
-        if args and args[0].type == SYMBOL.arglist:
-            child = args[0].children
+        args_list = change_spec[func_name]['args_list']
+        if len(args_list) == 0:
+            return
 
-        index = 0
-        for ln in child:
-            if ln.type == SYMBOL.argument:
-                index = index + 1
-            elif ln.type != TOKEN.COMMA:
-                ln.replace(KeywordArg(Name(arg_list[index]), ln.clone()))
-                index = index + 1
+        if isinstance(args[0], Leaf):
+            if 1 != len(args_list):
+                logger.warn("argument list length not equal, raw func argument list length is 1, but expected length is {}".format(len(arg_list)))
+                return
+
+            args[0].replace(KeywordArg(Name(args_list[0]), args[0].clone()))
+
+        elif isinstance(args[0], Node):
+            if args[0].type == SYMBOL.arglist:
+                print(args[0])
+                if len(args[0].children) != (len(args_list) *2-1):
+                    logger.warn("argument list length not equal, raw func argument list length is {}, but expected length is {}".format(int((len(args[0].children) +1 )/2), len(args_list)))
+                    return
+
+                child = args[0].children
+                index = 0
+                for ln in child:
+                    if ln.type == SYMBOL.argument:
+                        index = index + 1
+                    elif ln.type != TOKEN.COMMA:
+                        ln.replace(KeywordArg(Name(args_list[index]), ln.clone()))
+                        index = index + 1
+            elif args[0].type == SYMBOL.argument:
+                if 1 != len(args_list):
+                    logger.warn("argument list length not equal, raw func argument list length is 1, but expected length is {}".format(len(args_list)))
+                    return
+
+                raw_arg_name = args[0].children[0].value
+                if raw_arg_name != args_list[0]:
+                    logger.warn("exist function argument name ({}) not equal expected argument name ({})".format(raw_arg_name, args_list[0]))
+                    return
+
 
     q.select(pattern).modify(_modify_args_to_kwargs)
 
@@ -301,24 +361,58 @@ def refactor_kwargs(q:Query, change_spec) -> "Query":
     """
     return q
 
-def api_warning(q:Query, change_spec) -> "Query":
+def api_rename_and_warning(q:Query, change_spec) -> "Query":
     """
-    print warning if specified api are used.
+    1. rename old api to new api. e.g.
+        origin code snippet:
+            ```
+            a = old_path.old_to.old_api(1, 2)
+            ```
+        refactored code snippet:
+           ```
+           a = new_path.new_to.new_api(1, 2)
+           ```
+    2. print warning if specified api are used.
     """
-    return q
+    # construct api rename mapping and api warning mapping
+    rename_map = {}
+    warning_map = {}
+    for main_alias, v in change_spec.items():
+        new_api_name = v.get('update_to', None)
+        if new_api_name is not None:
+            rename_map[main_alias] = new_api_name
+        warning = v.get('warning', None)
+        if warning is not None:
+            warning_map[main_alias] = warning
 
-def api_rename(q:Query, change_spec) -> "Query":
-    """
-    rename old api to new api. e.g.
-    origin code snippet:
-        ```
-        a = old_path.old_to.old_api(1, 2)
-        ```
-    refactored code snippet:
-        ```
-        a = new_path.new_to.new_api(1, 2)
-        ```
-    """
+    pattern = """ power< 'paddle' trailer< any* >* > """
+    def _rename_and_warning(node: LN, capture: Capture, filename: Filename) -> None:
+        code = ''
+        for leaf in node.leaves():
+            code = code + leaf.value
+        found_rename = False
+        found_warning = False
+        api = None
+        for _api in rename_map.keys():
+            if code.startswith(_api):
+                found_rename = True
+                api = _api
+                break
+        for _api in warning_map.keys():
+            if code.startswith(_api):
+                found_warning = True
+                api = _api
+                break
+        if not found_rename and not found_warning:
+            return
+        # if found rename, replace old_api with new_api
+        if found_rename:
+            utils.replace_module_path(node, api, rename_map[api])
+        # if not found rename and found warning, print warning
+        elif found_warning:
+            logger.warning(warning_map[api])
+    q.select(pattern).modify(_rename_and_warning)
+
     return q
 
 def refactor_syntax(q:Query, change_spec) -> "Query":
