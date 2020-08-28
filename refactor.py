@@ -249,6 +249,41 @@ def args_warning(q:Query, change_spec) -> "Query":
     """
     print warning if specified args are used.
     """
+    pattern = """
+    (
+        power< name=any* trailer<  '(' arglist=any* ')' > >
+    )
+    """
+    def _get_func_name(lns: list):
+        func_name = ""
+        for ln in lns:
+            if isinstance(ln, Leaf):
+                func_name = func_name + ln.value
+            elif isinstance(ln, Node):
+                for l in ln.leaves():
+                    func_name = func_name + l.value
+        return func_name
+
+    def _add_warning(node, capture, fn):
+        args = capture["arglist"]
+        name = capture["name"]
+        func_name = _get_func_name(name)
+
+        if func_name not in change_spec or not change_spec[func_name]["args_warning"]:
+            return
+        
+        args_warning = change_spec[func_name]["args_warning"]
+
+        if args and args[0].type == SYMBOL.arglist:
+            child = args[0].children
+            for n in child:
+                if isinstance(n, Node) and n.type == SYMBOL.argument:
+                    arg_name = n.children[0].value
+                    if arg_name in args_warning:
+                        warning_info = args_warning[arg_name]
+                        logger.warn(warning_info)
+
+    q.select(pattern).modify(_add_warning)
     return q
 
 def refactor_kwargs(q:Query, change_spec) -> "Query":
