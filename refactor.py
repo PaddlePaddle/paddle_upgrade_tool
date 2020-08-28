@@ -14,22 +14,6 @@ import utils
 
 from fissix.patcomp import PatternCompiler
 
-def ModulePath(module_path: str):
-    """
-    convert module path to Node list, e.g.
-    'path.to.api' -> [Leaf(1, 'path'),
-                      Node(trailer, [Leaf(23, '.'), Leaf(1, 'path')]),
-                      Node(trailer, [Leaf(23, '.'), Leaf(1, 'to')]),
-                      Node(trailer, [Leaf(23, '.'), Leaf(1, 'api')])]
-    """
-    if not module_path:
-        return nodes_list
-    dotted_parts = module_path.split('.')
-    nodes_list = [Name(dotted_parts[0]),]
-    for part in dotted_parts:
-        nodes_list.append(Node(python_symbols.trailer, [Dot(), Name(part)]))
-    return nodes_list
-
 # don't change the order if you don't know what you are doing.
 __all__ = [
     'refactor_demo',
@@ -228,24 +212,8 @@ def norm_api_alias(q: Query, change_spec) -> "Query":
         for alias in v.get('alias', []):
             alias_map[alias] = main_alias
 
-    pattern1 = """ power< 'paddle' trailer< any* >* > """
-    pattern = """ file_input< any* > """
-    pattern = pattern1
-
-    PC = PatternCompiler()
-    _pattern, pattern_tree = PC.compile_pattern(pattern1.strip(), with_tree=True)
-
+    pattern = """ power< 'paddle' trailer< any* >* > """
     def _norm(node: LN, capture: Capture, filename: Filename) -> None:
-        if 'node' in capture:
-            print('capture:', capture)
-            for ln in node.post_order():
-                print(repr(ln))
-                print('-' * 10)
-                results = {'node':ln}
-                if _pattern.match(ln, results):
-                    print("match:", results)
-
-
         code = ''
         for leaf in node.leaves():
             code = code + leaf.value
@@ -258,10 +226,7 @@ def norm_api_alias(q: Query, change_spec) -> "Query":
                 break
         if not found_alias:
             return
-        #print(node, repr(node))
-        #print("node parent:", repr(node.parent))
         utils.replace_module_path(node, alias, alias_map[alias])
-
     q.select(pattern).modify(_norm)
 
     return q
