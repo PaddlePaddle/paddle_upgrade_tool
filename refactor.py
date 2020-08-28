@@ -224,7 +224,13 @@ def norm_api_alias(q: Query, change_spec) -> "Query":
                 break
         if not found_alias:
             return
-        utils.replace_module_path(node, alias, alias_map[alias])
+        main_alias = alias_map[alias]
+        update_to = change_spec[main_alias].get('update_to', None)
+        # if main_alias contains "update_to" field, rename alias to "update_to" directly
+        if update_to is None:
+            utils.replace_module_path(node, alias, main_alias)
+        else:
+            utils.replace_module_path(node, alias, update_to)
     q.select(pattern).modify(_norm)
 
     return q
@@ -410,7 +416,8 @@ def api_rename_and_warning(q:Query, change_spec) -> "Query":
             utils.replace_module_path(node, api, rename_map[api])
         # if not found rename and found warning, print warning
         elif found_warning:
-            logger.warning(warning_map[api])
+            warning_msg = "{}:{} {}".format(filename, node.get_lineno(), warning_map[api])
+            logger.warning(warning_msg)
     q.select(pattern).modify(_rename_and_warning)
 
     return q
