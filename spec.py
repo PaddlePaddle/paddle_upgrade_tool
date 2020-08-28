@@ -19,5 +19,10 @@ change_spec = {
         "alias": [
             "paddle.fluid.optimizer.AdamOptimizer",
             ],
+        "update_to": "paddle.AdamOptimizer",
     },
+    "paddle.optimizer.TestOptimizer": {
+        "warning": "this api is deprecated, use paddle.TestOptimizer please.",
+    },
+
 }
