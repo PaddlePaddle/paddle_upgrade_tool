@@ -261,20 +261,45 @@ def args_to_kwargs(q:Query, change_spec) -> "Query":
         name = capture["name"]
         func_name = _get_func_name(name)
 
-        if func_name not in change_spec:
+        if func_name not in change_spec or 'args_list' not in change_spec[func_name]:
             return
 
-        arg_list = change_spec[func_name]['args_list']
-        if args and args[0].type == SYMBOL.arglist:
-            child = args[0].children
+        args_list = change_spec[func_name]['args_list']
+        if len(args_list) == 0:
+            return
 
-        index = 0
-        for ln in child:
-            if ln.type == SYMBOL.argument:
-                index = index + 1
-            elif ln.type != TOKEN.COMMA:
-                ln.replace(KeywordArg(Name(arg_list[index]), ln.clone()))
-                index = index + 1
+        if isinstance(args[0], Leaf):
+            if 1 != len(args_list):
+                logger.warn("argument list length not equal, raw func argument list length is 1, but expected length is {}".format(len(arg_list)))
+                return
+
+            args[0].replace(KeywordArg(Name(args_list[0]), args[0].clone()))
+
+        elif isinstance(args[0], Node):
+            if args[0].type == SYMBOL.arglist:
+                print(args[0])
+                if len(args[0].children) != (len(args_list) *2-1):
+                    logger.warn("argument list length not equal, raw func argument list length is {}, but expected length is {}".format(int((len(args[0].children) +1 )/2), len(args_list)))
+                    return
+
+                child = args[0].children
+                index = 0
+                for ln in child:
+                    if ln.type == SYMBOL.argument:
+                        index = index + 1
+                    elif ln.type != TOKEN.COMMA:
+                        ln.replace(KeywordArg(Name(args_list[index]), ln.clone()))
+                        index = index + 1
+            elif args[0].type == SYMBOL.argument:
+                if 1 != len(args_list):
+                    logger.warn("argument list length not equal, raw func argument list length is 1, but expected length is {}".format(len(args_list)))
+                    return
+
+                raw_arg_name = args[0].children[0].value
+                if raw_arg_name != args_list[0]:
+                    logger.warn("exist function argument name ({}) not equal expected argument name ({})".format(raw_arg_name, args_list[0]))
+                    return
+
 
     q.select(pattern).modify(_modify_args_to_kwargs)
 
