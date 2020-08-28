@@ -413,12 +413,14 @@ class RefactoringTool(object):
             fixer.start_tree(tree, name)
 
         # use traditional matching for the incompatible fixers
-        #for _ in chain(self.post_order, self.pre_order):
-        #    self.traverse_by(self.bmi_pre_order_heads, tree.pre_order())
-        #    self.traverse_by(self.bmi_post_order_heads, tree.post_order())
+        traverse_strategy =  os.environ.get('TRAVERSE_STRATEGY', None)
+        if traverse_strategy == 'fixer_by_fixer':
+            self.traverse_by_v2(self.bmi_pre_order, tree, 'pre')
+            self.traverse_by_v2(self.bmi_post_order, tree, 'post')
+        else:
+            self.traverse_by(self.bmi_pre_order_heads, tree.pre_order())
+            self.traverse_by(self.bmi_post_order_heads, tree.post_order())
 
-        self.traverse_by(self.bmi_pre_order_heads, tree.pre_order())
-        self.traverse_by(self.bmi_post_order_heads, tree.post_order())
         # obtain a set of candidate nodes
         match_set = self.BM.run(tree.leaves())
 
@@ -491,6 +493,32 @@ class RefactoringTool(object):
             return
         for node in traversal:
             for fixer in fixers[node.type]:
+                results = fixer.match(node)
+                if results:
+                    new = fixer.transform(node, results)
+                    if new is not None:
+                        node.replace(new)
+                        node = new
+
+    def traverse_by_v2(self, fixers, tree, order):
+        """Traverse an AST for each fixer in fixers, applying each fixer to each node.
+
+        This is a helper method for refactor_tree().
+
+        Args:
+            fixers: a list of fixer instances. not node.type -> list of fixers
+            tree: the CST tree
+            order: 'pre' or 'post'
+
+        Returns:
+            None
+        """
+        for fixer in fixers:
+            if order == 'pre':
+                traversal = tree.pre_order()
+            elif order == 'post':
+                traversal = tree.post_order()
+            for node in traversal:
                 results = fixer.match(node)
                 if results:
                     new = fixer.transform(node, results)

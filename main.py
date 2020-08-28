@@ -2,6 +2,7 @@ from __future__ import print_function
 from __future__ import division
 from __future__ import absolute_import
 
+import os
 import sys
 import argparse
 from common import *
@@ -42,6 +43,12 @@ def main():
     if not should_convert():
         logger.error("convert abort!")
         sys.exit(1)
+
+    # traverse CST tree fixer by fixer.
+    # The default behavior of lib2to3 is traverse CST tree only once,
+    # and apply each fixer to each node. See https://github.com/python/cpython/blob/d9a966ae08258da2ce2a432c943d8194760f09c4/Lib/lib2to3/refactor.py#L410
+    # This has a bug in this behavior: if you add a new Node, post traversal won't visit children in the new Node any more.
+    os.environ['TRAVERSE_STRATEGY'] = 'fixer_by_fixer'
 
     # refactor code via "Query" step by step.
     q = Query(args.inpath)
