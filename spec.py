@@ -15,4 +15,9 @@ change_spec = {
         "args_warning": {"arg1":"warning message"},
         "args_transformer": "_default_transformer",
     },
+    "paddle.optimizer.AdamOptimizer": {
+        "alias": [
+            "paddle.fluid.optimizer.AdamOptimizer",
+            ],
+    },
 }

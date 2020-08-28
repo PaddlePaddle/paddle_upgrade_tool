@@ -413,8 +413,9 @@ class RefactoringTool(object):
             fixer.start_tree(tree, name)
 
         # use traditional matching for the incompatible fixers
-        self.traverse_by(self.bmi_pre_order_heads, tree.pre_order())
-        self.traverse_by(self.bmi_post_order_heads, tree.post_order())
+        for _ in chain(self.post_order, self.pre_order):
+            self.traverse_by(self.bmi_pre_order_heads, tree.pre_order())
+            self.traverse_by(self.bmi_post_order_heads, tree.post_order())
 
         # obtain a set of candidate nodes
         match_set = self.BM.run(tree.leaves())

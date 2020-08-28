@@ -4,12 +4,31 @@ from bowler.types import LN, Capture, Filename, SYMBOL, TOKEN
 from fissix.pytree import Leaf, Node, type_repr
 from fissix.fixer_util import Attr, Comma, Dot, LParen, Name, Newline, RParen, KeywordArg
 from fissix.fixer_util import is_import, touch_import, find_root
-from fissix.pygram import python_grammar
+from fissix.pygram import python_grammar, python_symbols
 
 
 from common import logger
 import processors
 import fixers
+import utils
+
+from fissix.patcomp import PatternCompiler
+
+def ModulePath(module_path: str):
+    """
+    convert module path to Node list, e.g.
+    'path.to.api' -> [Leaf(1, 'path'),
+                      Node(trailer, [Leaf(23, '.'), Leaf(1, 'path')]),
+                      Node(trailer, [Leaf(23, '.'), Leaf(1, 'to')]),
+                      Node(trailer, [Leaf(23, '.'), Leaf(1, 'api')])]
+    """
+    if not module_path:
+        return nodes_list
+    dotted_parts = module_path.split('.')
+    nodes_list = [Name(dotted_parts[0]),]
+    for part in dotted_parts:
+        nodes_list.append(Node(python_symbols.trailer, [Dot(), Name(part)]))
+    return nodes_list
 
 # don't change the order if you don't know what you are doing.
 __all__ = [
@@ -26,7 +45,7 @@ __all__ = [
     ]
 
 def refactor_demo(q: Query, change_spec) -> "Query":
-    q.select_function("old_api").is_call().rename("new_api").process(processors.demo_post_processor)
+    #q.select_function("old_api").is_call().rename("new_api").process(processors.demo_post_processor)
 
     #q.fixer(fixers.FixerDemo)
     return q
@@ -105,10 +124,16 @@ def refactor_import(q: Query, change_spec) -> "Query":
         if capture and 'name_import' in capture:
             paddle_imported = True
             paddle_found = True
-        if capture and ('module_imports' in capture or 'module_nickname' in capture):
+        if capture and ('module_import' in capture or 'module_imports' in capture or 'module_nickname' in capture):
             paddle_found = True
             if filename not in imports_map:
                 imports_map[filename] = {}
+            if 'module_import' in capture:
+                leaf = capture['module_import']
+                if leaf.type == TOKEN.NAME:
+                    old_name = leaf.value.strip()
+                    new_name = str(capture['module_name']).strip() + '.' + old_name
+                    imports_map[filename][old_name] = new_name
             if 'module_imports' in capture:
                 for leaf in capture['module_imports']:
                     if leaf.type == TOKEN.NAME:
@@ -143,11 +168,16 @@ def refactor_import(q: Query, change_spec) -> "Query":
         rename_dict = imports_map[filename]
         if node.value in rename_dict:
             # find old_name and new_name
+            p = node.parent
             old_name = node.value
             new_name = rename_dict[old_name]
             if node.parent is not None:
-                new_node = Name(new_name, prefix=node.prefix)
-                node.replace(new_node)
+                #new_node = Name(new_name, prefix=node.prefix)
+                new_node = utils.code_repr(new_name)
+                if node.parent.type == SYMBOL.power:
+                    node.replace(new_node.children)
+                else:
+                    node.replace(new_node)
     q.modify(_rename)
 
     # remove as_import and from_import
@@ -192,6 +222,48 @@ def norm_api_alias(q: Query, change_spec) -> "Query":
        a = path2.to2.main_alias()
        ```
     """
+    # construct alias mapping
+    alias_map = {}
+    for main_alias, v in change_spec.items():
+        for alias in v.get('alias', []):
+            alias_map[alias] = main_alias
+
+    pattern1 = """ power< 'paddle' trailer< any* >* > """
+    pattern = """ file_input< any* > """
+    pattern = pattern1
+
+    PC = PatternCompiler()
+    _pattern, pattern_tree = PC.compile_pattern(pattern1.strip(), with_tree=True)
+
+    def _norm(node: LN, capture: Capture, filename: Filename) -> None:
+        if 'node' in capture:
+            print('capture:', capture)
+            for ln in node.post_order():
+                print(repr(ln))
+                print('-' * 10)
+                results = {'node':ln}
+                if _pattern.match(ln, results):
+                    print("match:", results)
+
+
+        code = ''
+        for leaf in node.leaves():
+            code = code + leaf.value
+        found_alias = False
+        alias = None
+        for _alias in alias_map.keys():
+            if code.startswith(_alias):
+                found_alias = True
+                alias = _alias
+                break
+        if not found_alias:
+            return
+        #print(node, repr(node))
+        #print("node parent:", repr(node.parent))
+        utils.replace_module_path(node, alias, alias_map[alias])
+
+    q.select(pattern).modify(_norm)
+
     return q
 
 def args_to_kwargs(q:Query, change_spec) -> "Query":
