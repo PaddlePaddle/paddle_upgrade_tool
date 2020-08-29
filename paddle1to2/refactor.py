@@ -394,106 +394,75 @@ def refactor_kwargs(q:Query, change_spec) -> "Query":
                 pass
         return None
 
-    def _refector_args_with_transformer(node, capture, fn):
-        _refector_args(node, capture, fn)
-
-        name = capture["name"]
-        func_name = _get_func_name(name)
-        if func_name not in change_spec or not change_spec[func_name]["args_transformer"]:
-            return
-        eval(change_spec[func_name]["args_transformer"])(node, capture, fn)
-
     def _refector_args(node, capture, fn):
         fp = capture["function_parameters"]
         name = capture["name"]
         func_name = _get_func_name(name)
 
-        if func_name not in change_spec or not change_spec[func_name]["args_change"]:
+        if func_name not in change_spec:
             return
+        
+        if "args_change" in change_spec[func_name]:
+            args_change = change_spec[func_name]['args_change']
+            node_list = []
 
-        args_change = change_spec[func_name]['args_change']
-
-        node_list = []
-        if fp.children == [LParen(), RParen()]:
-            # empty args, only add new kwargs
+            index = 0
             for arg_tuple in args_change:
                 if len(arg_tuple) == 3:
                     new_arg = arg_tuple[1]
                     arg_val = arg_tuple[2]
                     arg_node = KeywordArg(Name(new_arg), Number(arg_val))
                     node_list.append(arg_node)
-
-        elif fp.children[1].type == SYMBOL.argument:
-            for arg_tuple in args_change:
-                if len(arg_tuple) == 2:
+                elif len(arg_tuple) == 2:
                     old_arg = arg_tuple[0]
                     new_arg = arg_tuple[1]
-                    # del
-                    if new_arg == '':
-                        pass
+                    if fp.children == [LParen(), RParen()]:
+                        logger.Warning("can not rename or delete argument because raw argument is empty")
+                    elif fp.children[1].type == SYMBOL.argument:
+                        #del
+                        if new_arg == '':
+                            pass
+                        else:
+                        #rename
+                            raw_num = fp.children[1].children[2].clone()
+                            arg_node = KeywordArg(Name(new_arg), raw_num)
+                            node_list.append(arg_node)
+                    elif fp.children[1].type == TOKEN.NUMBER:
+                        # del
+                        if new_arg == '':
+                            pass
+                        else:
+                        # rename
+                            raw_num = fp.children[1].clone()
+                            arg_node = KeywordArg(Name(new_arg), raw_num)
+                            node_list.append(arg_node)
                     else:
-                    # rename
-                        raw_num = fp.children[1].children[2].clone()
-                        arg_node = KeywordArg(Name(new_arg), raw_num)
-                        node_list.append(arg_node)
+                        #del
+                        if new_arg == '':
+                            pass
+                        else:
+                        #rename
+                            raw_num = _get_number_from_arglist(index, fp.children[1].children)
+                            arg_node = KeywordArg(Name(new_arg), raw_num)
+                            node_list.append(arg_node)
 
-                elif len(arg_tuple) == 3:
-                    #add
-                    new_arg = arg_tuple[1]
-                    arg_val = arg_tuple[2]
-                    arg_node = KeywordArg(Name(new_arg), Number(arg_val))
-                    node_list.append(arg_node)
-        elif fp.children[1].type == TOKEN.NUMBER:
-            for arg_tuple in args_change:
-                if len(arg_tuple) == 2:
-                    old_arg = arg_tuple[0]
-                    new_arg = arg_tuple[1]
-                    # del
-                    if new_arg == '':
-                        pass
-                    else:
-                    # rename
-                        raw_num = fp.children[1].clone()
-                        arg_node = KeywordArg(Name(new_arg), raw_num)
-                        node_list.append(arg_node)
-
-                elif len(arg_tuple) == 3:
-                    #add
-                    new_arg = arg_tuple[1]
-                    arg_val = arg_tuple[2]
-                    arg_node = KeywordArg(Name(new_arg), Number(arg_val))
-                    node_list.append(arg_node)
-        elif fp.children[1].type == SYMBOL.arglist:
-            index = 0
-            for arg_tuple in args_change:
-                if len(arg_tuple) == 2:
-                    old_arg = arg_tuple[0]
-                    new_arg = arg_tuple[1]
-                    #del
-                    if new_arg == '':
-                        pass
-                    else:
-                    #rename
-                        raw_num = _get_number_from_arglist(index, fp.children[1].children)
-                        arg_node = KeywordArg(Name(new_arg), raw_num)
-                        node_list.append(arg_node)
-                elif len(arg_tuple)  == 3:
-                    new_arg = arg_tuple[1]
-                    arg_val = arg_tuple[2]
-                    arg_node = KeywordArg(Name(new_arg), Number(arg_val))
-                    node_list.append(arg_node)
                 index = index + 1
 
-        # add comma to list
-        node_list_with_comma = []
-        for i, n in enumerate(node_list):
-            if i != 0:
-                node_list_with_comma.append(Comma())
-            node_list_with_comma.append(n)
+            # add comma to list
+            node_list_with_comma = []
+            for i, n in enumerate(node_list):
+                if i != 0:
+                    node_list_with_comma.append(Comma())
+                node_list_with_comma.append(n)
 
-        fp.replace(ArgList(node_list_with_comma))
+            fp.replace(ArgList(node_list_with_comma))
 
-    q.select(pattern).modify(_refector_args_with_transformer)
+        transformer_func = None
+        if "args_transformer" in change_spec[func_name]:
+            transformer_func = eval(change_spec[func_name]["args_transformer"])
+            transformer_func(node, capture, fn)
+
+    q.select(pattern).modify(_refector_args)
     return q
 
 def api_rename_and_warning(q:Query, change_spec) -> "Query":
