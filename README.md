@@ -61,6 +61,18 @@ python -m paddle1to2 --inpath /path/to/model.py --refactor <refactor_name>
 
 use `python -m paddle1to2 -h` to see full list of all refactors.
 
+if you want to run all unittest, use command:
+
+```bash
+python -m unittest discover paddle1to2/tests/
+```
+or use command:
+
+```bash
+python -m unittest paddle1to2/tests/test_refactor.py
+```
+to run specific test file.
+
 ### Other Tools
 1. find pattern of specific code snippet, usage:
 

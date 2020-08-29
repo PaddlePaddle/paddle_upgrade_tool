@@ -1,10 +1,13 @@
 import os
+import sys
 import unittest
 import textwrap
 from tempfile import NamedTemporaryFile
 
+sys.path.insert(0, '')
+
+from paddle1to2.refactor import * 
 from bowler import Query
-from paddle1to2.refactor import *
 
 def _refactor_helper(refactor_func, input_src, change_spec) -> str:
     try:
@@ -12,7 +15,7 @@ def _refactor_helper(refactor_func, input_src, change_spec) -> str:
         ntf.write(input_src.encode('utf-8'))
         ntf.close()
         q = Query(ntf.name)
-        refactor_func(q, change_spec=change_spec).execute(interactive=False, write=True, silent=True)
+        refactor_func(q, change_spec).execute(interactive=False, write=True, silent=True)
         with open(ntf.name, 'r') as f:
             output_src = f.read()
         return output_src
