@@ -32,8 +32,8 @@ setup(
     build_dir="build",
     zip_safe=False,
     classifiers=(
+        "License :: OSI Approved",
         "Programming Language :: Python :: 3",
         "Operating System :: OS Independent",
-        "Private :: Do Not Upload",
     ),
 )
