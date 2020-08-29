@@ -58,7 +58,6 @@ def main():
         else:
             refactor_func(q, change_spec)
 
-
     if args.write:
         # print diff to stdout, and modify file in place.
         q.execute(interactive=False, write=True, silent=False)

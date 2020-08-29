@@ -14,7 +14,8 @@ setup(
     author_email='taoshibo@baidu.com',
     keywords=('paddle1to2', 'paddle', 'paddlepaddle'),
     url='https://github.com/T8T9/paddle1to2',
-    packages = find_packages(exclude=('tests')),
+    packages = find_packages(),
+    package_data={'fissix': ['*.txt']},
     description='Upgrade python project from paddle-1.x to paddle-2.0',
     long_description=LONG_DESCRIPTION,
     long_description_content_type="text/markdown",
@@ -23,7 +24,7 @@ setup(
     scripts=[],
     entry_points={
         'console_scripts': [
-            'paddle1to2=main:main',
+            'paddle1to2=paddle1to2.main:main',
             'find_pattern=tools.find_pattern:main',
             'find_match_node=tools.find_match_node:main',
         ],
