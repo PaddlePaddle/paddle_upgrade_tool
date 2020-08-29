@@ -3,7 +3,7 @@ from bowler.helpers import power_parts, quoted_parts, dotted_parts
 from bowler.types import LN, Capture, Filename, SYMBOL, TOKEN
 
 from fissix.pytree import Leaf, Node, type_repr
-from fissix.fixer_util import Attr, Comma, Dot, LParen, Name, Newline, RParen, KeywordArg
+from fissix.fixer_util import Attr, Comma, Dot, LParen, Name, Newline, RParen, KeywordArg, Number
 from fissix.fixer_util import is_import, touch_import, find_root
 from fissix.pygram import python_grammar, python_symbols
 from fissix.patcomp import PatternCompiler
