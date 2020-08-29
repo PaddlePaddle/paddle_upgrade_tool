@@ -2,14 +2,16 @@ from __future__ import print_function
 from __future__ import division
 from __future__ import absolute_import
 
+import os
 import sys
 import argparse
-from common import *
+
 from bowler import Query
-import refactor
-from refactor import *
-from spec import change_spec
-import filters
+
+from paddle1to2.common import *
+from paddle1to2 import refactor, filters
+from paddle1to2.refactor import *
+from paddle1to2.spec import change_spec
 
 def should_convert():
     """
@@ -55,7 +57,6 @@ def main():
             refactor_func(q, change_spec).filter(filters.print_match)
         else:
             refactor_func(q, change_spec)
-
 
     if args.write:
         # print diff to stdout, and modify file in place.
