@@ -3,7 +3,7 @@ from bowler.helpers import power_parts, quoted_parts, dotted_parts
 from bowler.types import LN, Capture, Filename, SYMBOL, TOKEN
 
 from fissix.pytree import Leaf, Node, type_repr
-from fissix.fixer_util import Attr, Comma, Dot, LParen, Name, Newline, RParen, KeywordArg, Number
+from fissix.fixer_util import Attr, Comma, Dot, LParen, Name, Newline, RParen, KeywordArg, Number, ArgList
 from fissix.fixer_util import is_import, touch_import, find_root
 from fissix.pygram import python_grammar, python_symbols
 from fissix.patcomp import PatternCompiler
@@ -282,7 +282,6 @@ def args_to_kwargs(q:Query, change_spec) -> "Query":
 
         elif isinstance(args[0], Node):
             if args[0].type == SYMBOL.arglist:
-                print(args[0])
                 if len(args[0].children) != (len(args_list) *2-1):
                     logger.warn("argument list length not equal, raw func argument list length is {}, but expected length is {}".format(int((len(args[0].children) +1 )/2), len(args_list)))
                     return
@@ -381,7 +380,6 @@ def refactor_kwargs(q:Query, change_spec) -> "Query":
 
     def _get_number_from_arglist(index, arg_list):
         i = 0
-        print(arg_list)
         for n in arg_list:
             if n.type == SYMBOL.argument:
                 if i == index:
