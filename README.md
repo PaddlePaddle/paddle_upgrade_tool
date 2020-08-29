@@ -19,3 +19,7 @@ change_spec = {
     },
 }
 ```
+
+### Acknowledgements
+- [Bowler](https://github.com/facebookincubator/Bowler/): Safe code refactoring for modern Python projects.
+- [lib2to3](https://github.com/python/cpython/tree/master/Lib/lib2to3): A built-in python library to refactor python code.

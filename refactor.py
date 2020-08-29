@@ -187,6 +187,7 @@ def refactor_import(q: Query, change_spec) -> "Query":
             return
         if paddle_found:
             touch_import(None, 'paddle', node)
+            logger.info("{}:{} {}".format(filename, node.get_lineno(), 'add "import paddle"'))
             paddle_imported = True
     q.modify(_add_import)
 
