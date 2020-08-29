@@ -1,4 +1,5 @@
-from six import StringIO
+from io import StringIO
+
 from fissix.pgen2 import driver
 from fissix import pytree
 from fissix.pygram import python_grammar, python_symbols

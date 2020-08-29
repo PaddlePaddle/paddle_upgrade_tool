@@ -5,3 +5,6 @@ __pycache__
 __pycache__/*
 cases
 cases/*
+build/
+dist/
+paddle1to2.egg-info/
