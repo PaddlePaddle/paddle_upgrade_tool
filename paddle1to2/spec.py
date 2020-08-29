@@ -13,7 +13,7 @@ change_spec = {
             ("", "new_arg", "default_value"),
             ],
         "args_warning": {"arg1":"warning message"},
-        "args_transformer": "_default_transformer",
+        "args_transformer": "default_transformer",
     },
     "paddle.optimizer.AdamOptimizer": {
         "alias": [

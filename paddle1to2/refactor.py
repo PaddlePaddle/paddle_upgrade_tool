@@ -11,7 +11,7 @@ from fissix.patcomp import PatternCompiler
 from paddle1to2.common import logger
 from paddle1to2 import processors, fixers, utils
 
-import transformers
+from paddle1to2.transformers import *
 
 # don't change the order if you don't know what you are doing.
 __all__ = [
