@@ -1,10 +1,10 @@
 import os
 import unittest
 import textwrap
-from bowler import Query
 from tempfile import NamedTemporaryFile
 
-from refactor import *
+from bowler import Query
+from paddle1to2.refactor import *
 
 def _refactor_helper(refactor_func, input_src, change_spec) -> str:
     try:

@@ -27,6 +27,7 @@ __all__ = [
 
 def refactor_demo(q: Query, change_spec) -> "Query":
     #q.select_function("old_api").is_call().rename("new_api").process(processors.demo_post_processor)
+    q.select_function("old_api").is_call().rename("new_api")
 
     #q.fixer(fixers.FixerDemo)
     return q
