@@ -1,18 +1,16 @@
 from bowler import Query
 from bowler.helpers import power_parts, quoted_parts, dotted_parts
 from bowler.types import LN, Capture, Filename, SYMBOL, TOKEN
+
 from fissix.pytree import Leaf, Node, type_repr
 from fissix.fixer_util import Attr, Comma, Dot, LParen, Name, Newline, RParen, KeywordArg
 from fissix.fixer_util import is_import, touch_import, find_root
 from fissix.pygram import python_grammar, python_symbols
-
-
-from common import logger
-import processors
-import fixers
-import utils
-
 from fissix.patcomp import PatternCompiler
+
+from paddle1to2.common import logger
+from paddle1to2 import processors, fixers, utils
+
 
 # don't change the order if you don't know what you are doing.
 __all__ = [

@@ -1,4 +1,5 @@
 import logging
+
 from fissix import fixer_base
 from fissix.refactor import RefactoringTool
 

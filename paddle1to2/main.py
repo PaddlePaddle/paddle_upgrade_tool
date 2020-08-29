@@ -5,12 +5,13 @@ from __future__ import absolute_import
 import os
 import sys
 import argparse
-from common import *
+
 from bowler import Query
-import refactor
-from refactor import *
-from spec import change_spec
-import filters
+
+from paddle1to2.common import *
+from paddle1to2 import refactor, filters
+from paddle1to2.refactor import *
+from paddle1to2.spec import change_spec
 
 def should_convert():
     """

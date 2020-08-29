@@ -57,7 +57,8 @@ from lib2to3.pygram import python_symbols, python_grammar
 
 driver = driver.Driver(python_grammar, convert=pytree.convert)
 
-def main(args):
+def main():
+    args = sys.argv
     parser = optparse.OptionParser(usage="find_pattern.py [options] [string]")
     parser.add_option("-f", "--file", action="store",
                       help="Read a code snippet from the specified file")
@@ -98,4 +99,4 @@ def find_symbol(sym):
             return n
 
 if __name__ == "__main__":
-    sys.exit(main(sys.argv))
+    sys.exit(main())

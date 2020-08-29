@@ -24,6 +24,8 @@ setup(
     entry_points={
         'console_scripts': [
             'paddle1to2=main:main',
+            'find_pattern=tools.find_pattern:main',
+            'find_match_node=tools.find_match_node:main',
         ],
     },
     build_dir="build",
