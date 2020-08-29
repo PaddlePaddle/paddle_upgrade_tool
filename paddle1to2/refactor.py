@@ -11,6 +11,7 @@ from fissix.patcomp import PatternCompiler
 from paddle1to2.common import logger
 from paddle1to2 import processors, fixers, utils
 
+import transformers
 
 # don't change the order if you don't know what you are doing.
 __all__ = [
@@ -393,6 +394,15 @@ def refactor_kwargs(q:Query, change_spec) -> "Query":
                 pass
         return None
 
+    def _refector_args_with_transformer(node, capture, fn):
+        _refector_args(node, capture, fn)
+
+        name = capture["name"]
+        func_name = _get_func_name(name)
+        if func_name not in change_spec or not change_spec[func_name]["args_transformer"]:
+            return
+        eval(change_spec[func_name]["args_transformer"])(node, capture, fn)
+
     def _refector_args(node, capture, fn):
         fp = capture["function_parameters"]
         name = capture["name"]
@@ -483,8 +493,7 @@ def refactor_kwargs(q:Query, change_spec) -> "Query":
 
         fp.replace(ArgList(node_list_with_comma))
 
-    q.select(pattern).modify(_refector_args)
-
+    q.select(pattern).modify(_refector_args_with_transformer)
     return q
 
 def api_rename_and_warning(q:Query, change_spec) -> "Query":
