@@ -61,6 +61,22 @@ python -m paddle1to2 --inpath /path/to/model.py --refactor <refactor_name>
 
 use `python -m paddle1to2 -h` to see full list of all refactors.
 
+### Other Tools
+1. find pattern of specific code snippet, usage:
+
+```bash
+find_pattern 'import paddle'
+```
+`find_pattern` command will traverse all nodes in AST, if you see code snippet you want, type in 'y' to get pattern.
+
+2. find match node in specific code for specific pattern, usage:
+
+```bash
+find_match_node -ss 'import paddle' -ps 'any'
+```
+
+you can also specify "--print-results" option to got representation of matched node, specify "--print-lineno" to got line number of matched code.
+
 
 ### Acknowledgements
 - [Bowler](https://github.com/facebookincubator/Bowler/): Safe code refactoring for modern Python projects.
