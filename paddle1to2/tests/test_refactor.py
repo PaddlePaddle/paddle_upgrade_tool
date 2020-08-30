@@ -163,6 +163,33 @@ class TestNormApiAlias(unittest.TestCase):
         layer = paddle.fluid.Layer()
         '''
         self._run(self.change_spec, input_src, expected_src)
+
+
+class TestApiRename(unittest.TestCase):
+    change_spec = {
+            "paddle.fluid.Layer": {
+                "update_to": "paddle.Layer",
+                }
+            }
+
+    def _run(self, change_spec, input_src, expected_src):
+        input_src = textwrap.dedent(input_src).strip() + '\n'
+        expected_src = textwrap.dedent(expected_src).strip() + '\n'
+        output_src = _refactor_helper(api_rename_and_warning, input_src, change_spec)
+        self.assertEqual(output_src, expected_src)
+
+    def test_rename_and_warning(self):
+        input_src = '''
+        import paddle
+
+        layer = paddle.fluid.Layer()
+        '''
+        expected_src = '''
+        import paddle
+
+        layer = paddle.Layer()
+        '''
+        self._run(self.change_spec, input_src, expected_src)
  
 
 if __name__ == '__main__':
