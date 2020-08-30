@@ -153,6 +153,7 @@ class TestNormApiAlias(unittest.TestCase):
 
         layer = paddle.fluid.Layer()
         layer = paddle.fluid.layers.Layer()
+        layer = paddle.fluid.layers.Layer_With_Underscore()
         layer = paddle.fluid.layers1.layers2.Layer()
         '''
         expected_src = '''
@@ -160,6 +161,7 @@ class TestNormApiAlias(unittest.TestCase):
 
         layer = paddle.fluid.Layer()
         layer = paddle.fluid.Layer()
+        layer = paddle.fluid.layers.Layer_With_Underscore()
         layer = paddle.fluid.Layer()
         '''
         self._run(self.change_spec, input_src, expected_src)
@@ -169,7 +171,7 @@ class TestApiRename(unittest.TestCase):
     change_spec = {
             "paddle.fluid.Layer": {
                 "update_to": "paddle.Layer",
-                }
+                },
             }
 
     def _run(self, change_spec, input_src, expected_src):
@@ -183,11 +185,13 @@ class TestApiRename(unittest.TestCase):
         import paddle
 
         layer = paddle.fluid.Layer()
+        layer = paddle.fluid.Layer_With_Underscore()
         '''
         expected_src = '''
         import paddle
 
         layer = paddle.Layer()
+        layer = paddle.fluid.Layer_With_Underscore()
         '''
         self._run(self.change_spec, input_src, expected_src)
  
