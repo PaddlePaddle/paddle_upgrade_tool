@@ -232,7 +232,7 @@ class TestRefactorKwargs(unittest.TestCase):
                 ],
                 [
                     "",
-                    "name"
+                    "name",
                     "test"
                 ]
             ],

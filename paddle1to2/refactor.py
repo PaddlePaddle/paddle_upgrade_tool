@@ -481,7 +481,7 @@ def refactor_kwargs(q:Query, change_spec) -> "Query":
                                             ln.next_sibling.remove()
                                             ln.remove()
                                         else:
-                                            if ln.prev_sibling == Comm():
+                                            if ln.prev_sibling == Comma():
                                                 ln.prev_sibling.remove()
                                             ln.remove()
                                     #rename argument
@@ -497,10 +497,6 @@ def refactor_kwargs(q:Query, change_spec) -> "Query":
                     logger.warning("the length of args_change tuple is not equal 2 or 3, api name ={}, tuple= {}".format(func_name, arg_tuple))
 
         transformer_func = None
-        print("in refactor func")
-        print(id(fp))
-        print(repr(fp))
-        print()
         if "args_transformer" in change_spec[func_name]:
             transformer_func = eval("transformers." + change_spec[func_name]["args_transformer"])
             transformer_func(node, capture, fn)
