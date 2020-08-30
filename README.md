@@ -40,7 +40,7 @@ change_spec = {
 1. install with pip
 
 ```bash
-pip install paddle1to2
+pip install -U paddle1to2
 paddle1to2 --help # show help
 paddle1to2 --inpath /path/to/model.py # upgrade your model from paddle-1.x to paddle-2.0
 ```

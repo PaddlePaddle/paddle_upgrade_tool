@@ -218,7 +218,7 @@ def norm_api_alias(q: Query, change_spec) -> "Query":
         found_alias = False
         alias = None
         for _alias in alias_map.keys():
-            if code.startswith(_alias):
+            if utils.startswith(code, _alias):
                 found_alias = True
                 alias = _alias
                 break
@@ -400,12 +400,12 @@ def api_rename_and_warning(q:Query, change_spec) -> "Query":
         found_warning = False
         api = None
         for _api in rename_map.keys():
-            if code.startswith(_api):
+            if utils.startswith(code, _api):
                 found_rename = True
                 api = _api
                 break
         for _api in warning_map.keys():
-            if code.startswith(_api):
+            if utils.startswith(code, _api):
                 found_warning = True
                 api = _api
                 break

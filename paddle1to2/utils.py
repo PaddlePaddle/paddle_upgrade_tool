@@ -36,3 +36,28 @@ def replace_module_path(node, before, after):
     del node.children[:len(before_parts)]
     for i in range(len(after_node.children)):
         node.insert_child(i, after_node.children[i])
+
+def startswith(module_path1, module_path2):
+    """
+    check module_path1 includes module_path2, e.g.
+    "path.to.api.func_name" includes "path.to.api",
+    but not include "path.api.func"
+
+    return True if module_path1 includes module_path2, False otherwise.
+    """
+    # convert "path.to.api()" to "path.to.api"
+    idx = module_path1.find('(')
+    if idx != -1:
+        module_path1 = module_path1[:idx]
+    idx = module_path2.find('(')
+    if idx != -1:
+        module_path2 = module_path2[:idx]
+    dotted_parts1 = module_path1.split('.')
+    dotted_parts2 = module_path2.split('.')
+    if len(dotted_parts1) < len(dotted_parts2):
+        return False
+    for i in range(len(dotted_parts2)):
+        if dotted_parts1[i] != dotted_parts2[i]:
+            return False
+    return True
+
