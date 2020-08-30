@@ -1,4 +1,4 @@
-change_sp = {
+change_spec = {
     # TODO list
     # paddle.fluid.dygraph.guard
     # paddle.fluid.unique_name.guard
