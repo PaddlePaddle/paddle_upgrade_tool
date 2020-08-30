@@ -1,4 +1,4 @@
-change_spec = {
+change_sp = {
     # TODO list
     # paddle.fluid.dygraph.guard
     # paddle.fluid.unique_name.guard
@@ -1188,11 +1188,11 @@ change_spec = {
     # "paddle.fluid.layers.layer_norm": {
     #     "update_to": "paddle.fluid.layers.layer_norm"
     # },
-    # FlUID_WARNING
+    # TODO FlUID_WARNING paddle.nn.functional.norm.group_norm
     # "paddle.fluid.layers.group_norm": {
     #     "update_to": "paddle.fluid.layers.group_norm"
     # },
-    # FlUID_WARNING
+    # TODO FlUID_WARNING paddle.nn.functional.norm.spectral_norm
     # "paddle.fluid.layers.spectral_norm": {
     #     "update_to": "paddle.fluid.layers.spectral_norm"
     # },
@@ -1320,7 +1320,7 @@ change_spec = {
     # "paddle.fluid.layers.resize_trilinear": {
     #     "update_to": "paddle.fluid.layers.resize_trilinear"
     # },
-    # FlUID_WARNING
+    # FlUID_WARNING 
     # "paddle.fluid.layers.resize_nearest": {
     #     "update_to": "paddle.fluid.layers.resize_nearest"
     # },
@@ -1579,7 +1579,7 @@ change_spec = {
             [
                 "",
                 "return_index",
-                "True"
+                "True"    
             ],
             [
                 "dtype",
@@ -1638,14 +1638,78 @@ change_spec = {
     "paddle.fluid.layers.scale": {
         "update_to": "paddle.scale"
     },
-    # FlUID_WARNING
-    # "paddle.fluid.layers.elementwise_max": {
-    #     "update_to": "paddle.fluid.layers.elementwise_max"
-    # },
-    # FlUID_WARNING
-    # "paddle.fluid.layers.elementwise_min": {
-    #     "update_to": "paddle.fluid.layers.elementwise_min"
-    # },
+    # TODO act transformer manual check
+    "paddle.fluid.layers.elementwise_max": {
+        "update_to": "paddle.maximum",
+        "args_list": [
+            "x",
+            "y",
+            "axis",
+            "act",
+            "name"
+        ],
+        "args_change": [
+            [
+                "x",
+                "x"
+            ],
+            [
+                "y",
+                "y"
+            ],
+            [
+                "axis",
+                "axis"
+            ],
+            [
+                "act",
+                ""
+            ],
+            [
+                "name",
+                "name"
+            ]
+        ],
+        "args_warning": {
+            "act": "act is deleted in paddle.maximum"
+        }
+    },
+    # TODO act transformer manual check
+    "paddle.fluid.layers.elementwise_min": {
+        "update_to": "paddle.maximum",
+        "args_list": [
+            "x",
+            "y",
+            "axis",
+            "act",
+            "name"
+        ],
+        "args_change": [
+            [
+                "x",
+                "x"
+            ],
+            [
+                "y",
+                "y"
+            ],
+            [
+                "axis",
+                "axis"
+            ],
+            [
+                "act",
+                ""
+            ],
+            [
+                "name",
+                "name"
+            ]
+        ],
+        "args_warning": {
+            "act": "act is deleted in paddle.maximum"
+        }
+    },
     "paddle.fluid.layers.elementwise_pow": {
         "update_to": "paddle.elementwise_pow"
     },
@@ -1834,7 +1898,7 @@ change_spec = {
             "act": "act is deleted in paddle.add"
         }
     },
-    # TODO
+    # TODO 
     "paddle.fluid.layers.elementwise_sub": {
         "warning": "this api is deprecated in paddle2.0"
     },
@@ -2010,10 +2074,10 @@ change_spec = {
     "paddle.fluid.layers.gather_tree": {
         "update_to": "paddle.nn.gather_tree"
     },
-    # FlUID_WARNING
-    # "paddle.fluid.layers.uniform_random": {
-    #     "update_to": "paddle.fluid.layers.uniform_random",
-    # },
+    # manual check
+    "paddle.fluid.layers.uniform_random": {
+        "update_to": "paddle.uniform"
+    },
     # manual check
     "paddle.fluid.layers.randint": {
         "update_to": "paddle.randint",
@@ -3334,11 +3398,11 @@ change_spec = {
     "paddle.fluid.layers.warpctc": {
         "update_to": "paddle.nn.functional.warpctc"
     },
-    # FlUID_WARNING
+    # TODO FlUID_WARNING
     # "paddle.fluid.layers.nce": {
     #     "update_to": "paddle.fluid.layers.nce"
     # },
-    # TODO transformer
+    # TODO transformer paddle.nn.functional.hsigmoid
     # "paddle.fluid.layers.hsigmoid": {
     #     "args_list": [
     #         "input",
@@ -3504,7 +3568,7 @@ change_spec = {
     #             "name"
     #         ]
     #     ]
-    # },
+    # }, 
     # TODO LSTMCell
     # "paddle.fluid.layers.LSTMCell": {
     #     "args_list": [
@@ -3656,6 +3720,7 @@ change_spec = {
     #     "update_to": "paddle.fluid.dygraph.enabled"
     # },
     "paddle.fluid.dygraph.to_variable": {
+        "alias": ["paddle.fluid.dygraph.base.to_variable"],
         "update_to": "paddle.to_tensor",
         "args_list": [
             "value",
@@ -3867,11 +3932,11 @@ change_spec = {
     "paddle.fluid.dygraph.BilinearTensorProduct": {
         "update_to": "paddle.nn.BilinearTensorProduct"
     },
-    # TODO FlUID_WARNING
+    # TODO ConvTranspose2d
     # "paddle.fluid.dygraph.Conv2DTranspose": {
     #     "update_to": "paddle.fluid.dygraph.Conv2DTranspose"
     # },
-    # TODO FlUID_WARNING
+    # TODO ConvTranspose3d
     # "paddle.fluid.dygraph.Conv3DTranspose": {
     #     "update_to": "paddle.fluid.dygraph.Conv3DTranspose"
     # },
@@ -3925,7 +3990,7 @@ change_spec = {
     "paddle.fluid.dygraph.SpectralNorm": {
         "update_to": "paddle.nn.SpectralNorm"
     },
-    # FlUID_WARNING
+    # TODO FlUID_WARNING
     # "paddle.fluid.dygraph.TreeConv": {
     #     "update_to": "paddle.fluid.dygraph.TreeConv"
     # },
@@ -4138,16 +4203,21 @@ change_spec = {
     #     "update_to": "paddle.fluid.nets.img_conv_group"
     # },
     "paddle.fluid.optimizer.SGD": {
+        "alias": ["paddle.fluid.optimizer.SGDOptimizer"],
         "update_to": "paddle.optimizer.SGD"
     },
     "paddle.fluid.optimizer.Momentum": {
+        "alias": ["paddle.fluid.optimizer.MomentumOptimizer"],
         "update_to": "paddle.optimizer.Momentum"
     },
     "paddle.fluid.optimizer.Adagrad": {
+        "alias": ["paddle.fluid.optimizer.AdagradOptimizer"],
         "update_to": "paddle.optimizer.Adagrad"
     },
     # manual check
     "paddle.fluid.optimizer.Adam": {
+        "alias": ["paddle.fluid.optimizer.AdamOptimizer"],
+        "update_to": "paddle.optimizer.Adam",
         "args_list": [
             "learning_rate",
             "beta1",
@@ -4199,6 +4269,8 @@ change_spec = {
         ]
     },
     "paddle.fluid.optimizer.Adamax": {
+        "alias": ["paddle.fluid.optimizer.AdamaxOptimizer"],
+        "update_to": "paddle.optimizer.Adamax",
         "args_list": [
             "learning_rate",
             "beta1",
@@ -4245,58 +4317,31 @@ change_spec = {
         ]
     },
     "paddle.fluid.optimizer.Dpsgd": {
+        "alias": ["paddle.fluid.optimizer.DpsgdOptimizer"],
         "update_to": "paddle.optimizer.Dpsgd"
     },
     "paddle.fluid.optimizer.DecayedAdagrad": {
+        "alias": ["paddle.fluid.optimizer.DecayedAdagradOptimizer"],
         "update_to": "paddle.optimizer.DecayedAdagrad"
     },
     "paddle.fluid.optimizer.Ftrl": {
+        "alias": ["paddle.fluid.optimizer.FtrlOptimizer"],
         "update_to": "paddle.optimizer.Ftrl"
     },
-    "paddle.fluid.optimizer.SGDOptimizer": {
-        "update_to": "paddle.optimizer.SGDOptimizer"
-    },
-    "paddle.fluid.optimizer.MomentumOptimizer": {
-        "update_to": "paddle.optimizer.MomentumOptimizer"
-    },
-    "paddle.fluid.optimizer.AdagradOptimizer": {
-        "update_to": "paddle.optimizer.AdagradOptimizer"
-    },
-    # TODO define alias
-    # "paddle.fluid.optimizer.AdamOptimizer": {
-    #     "update_to": "paddle.fluid.optimizer.AdamOptimizer"
-    # },
-    # TODO define alias
-    # "paddle.fluid.optimizer.AdamaxOptimizer": {
-    #     "update_to": "paddle.fluid.optimizer.AdamaxOptimizer"
-    # },
-    "paddle.fluid.optimizer.DpsgdOptimizer": {
-        "update_to": "paddle.optimizer.DpsgdOptimizer"
-    },
-    "paddle.fluid.optimizer.DecayedAdagradOptimizer": {
-        "update_to": "paddle.optimizer.DecayedAdagradOptimizer"
-    },
-    # TODO define alias
+    # FLUID_WARNING
     # "paddle.fluid.optimizer.RMSPropOptimizer": {
     #     "update_to": "paddle.fluid.optimizer.RMSPropOptimizer"
     # },
-    "paddle.fluid.optimizer.FtrlOptimizer": {
-        "update_to": "paddle.optimizer.FtrlOptimizer"
-    },
     "paddle.fluid.optimizer.Adadelta": {
+        "alias": ["paddle.fluid.optimizer.AdadeltaOptimizer"],
         "update_to": "paddle.optimizer.Adadelta"
-    },
-    "paddle.fluid.optimizer.AdadeltaOptimizer": {
-        "update_to": "paddle.optimizer.AdadeltaOptimizer"
     },
     "paddle.fluid.optimizer.ModelAverage": {
         "update_to": "paddle.optimizer.ModelAverage"
     },
     "paddle.fluid.optimizer.LarsMomentum": {
+        "alias": ["paddle.fluid.optimizer.LarsMomentumOptimizer"],
         "update_to": "paddle.optimizer.LarsMomentum"
-    },
-    "paddle.fluid.optimizer.LarsMomentumOptimizer": {
-        "update_to": "paddle.optimizer.LarsMomentumOptimizer"
     },
     "paddle.fluid.optimizer.DGCMomentumOptimizer": {
         "update_to": "paddle.optimizer.DGCMomentumOptimizer"
