@@ -5,6 +5,7 @@ from __future__ import absolute_import
 import os
 import sys
 import argparse
+import click
 
 from bowler import Query
 
@@ -59,13 +60,16 @@ def main():
             refactor_func(q, change_spec)
 
     if args.write:
-        # print diff to stdout, and modify file in place.
-        q.execute(interactive=False, write=True, silent=False)
-        logger.info("refactor finished, and source files are modified")
+        if click.confirm(click.style('Files will be modified in-place, do you want to continue?', fg='red', bold=True)):
+            # print diff to stdout, and modify file in place.
+            q.execute(interactive=False, write=True, silent=False)
+            logger.info("Refactor finished, and source files are modified")
+        else:
+            click.secho('Refactor abort!', fg='red', bold=True)
     else:
         # print diff to stdout
         q.execute(interactive=False, write=False, silent=False)
-        logger.warning('refactor finished without touching source files, add "--write" to modify source files in place if everything is ok.')
+        logger.warning('Refactor finished without touching source files, add "--write" to modify source files in place if everything is ok.')
 
 if __name__ == "__main__":
     sys.exit(main())
