@@ -1,7 +1,7 @@
 Upgrade your python model from paddle-1.x to paddle-2.0
 
 ### Change Spec
-change_spce is a python dict defined in spec.py.
+change_spce is a python dict defined in spec.py, it defines the rules to refactor your code.
 
 ```python
 change_spec = {
