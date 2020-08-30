@@ -65,7 +65,7 @@ def main():
     else:
         # print diff to stdout
         q.execute(interactive=False, write=False, silent=False)
-        logger.warning('refactor finished without touching source files, add "--write" to modify source files in place.')
+        logger.warning('refactor finished without touching source files, add "--write" to modify source files in place if everything is ok.')
 
 if __name__ == "__main__":
     sys.exit(main())
