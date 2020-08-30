@@ -8,4 +8,3 @@ def default_transformer(node: LN, capture: Capture, filename: Filename) -> None:
         arg_node = KeywordArg(Name("trans_arg"), Number("1"))
         fp.children[1].children.append(Comma())
         fp.children[1].children.append(arg_node)
-        print(fp)

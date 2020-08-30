@@ -455,7 +455,7 @@ def refactor_kwargs(q:Query, change_spec) -> "Query":
                     node_list_with_comma.append(Comma())
                 node_list_with_comma.append(n)
 
-            fp.replace(ArgList(node_list_with_comma))
+            fp.children = ArgList(node_list_with_comma).children
 
         transformer_func = None
         if "args_transformer" in change_spec[func_name]:
