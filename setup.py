@@ -1,3 +1,4 @@
+import paddle1to2
 from setuptools import setup, find_packages
 
 with open('requirements.txt') as f:
@@ -8,7 +9,7 @@ with open("README.md", "r")as f:
 
 setup(
     name='paddle1to2',
-    version='0.0.1',
+    version=paddle1to2.__version__,
     install_requires=REQUIREMENTS,
     author='T8T9, PaddlePaddle',
     author_email='taoshibo@baidu.com',

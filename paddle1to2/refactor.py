@@ -26,6 +26,7 @@ __all__ = [
 
 def refactor_demo(q: Query, change_spec) -> "Query":
     #q.select_function("old_api").is_call().rename("new_api").process(processors.demo_post_processor)
+    q.select_function("old_api").rename("new_api")
 
     #q.fixer(fixers.FixerDemo)
     return q
@@ -216,7 +217,7 @@ def norm_api_alias(q: Query, change_spec) -> "Query":
         found_alias = False
         alias = None
         for _alias in alias_map.keys():
-            if code.startswith(_alias):
+            if utils.startswith(code, _alias):
                 found_alias = True
                 alias = _alias
                 break
@@ -540,12 +541,12 @@ def api_rename_and_warning(q:Query, change_spec) -> "Query":
         found_warning = False
         api = None
         for _api in rename_map.keys():
-            if code.startswith(_api):
+            if utils.startswith(code, _api):
                 found_rename = True
                 api = _api
                 break
         for _api in warning_map.keys():
-            if code.startswith(_api):
+            if utils.startswith(code, _api):
                 found_warning = True
                 api = _api
                 break

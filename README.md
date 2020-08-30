@@ -1,7 +1,9 @@
 Upgrade your python model from paddle-1.x to paddle-2.0
 
 ### Change Spec
-```
+`change_spec` is a python dict defined in spec.py, it defines the rules to refactor your code.
+
+```python
 change_spec = {
     "path.to.old_api": {
         "alias": [
@@ -12,9 +14,9 @@ change_spec = {
         "warning": "this api is deprecated.",
         "args_list": ["arg1", "arg2"],
         "args_change": [
-            ("arg2", "arg2_rename"),
-            ("arg3", ""),
-            ("", "new_arg", "default_value"),
+                ["arg2", "arg2_rename"],
+                ["arg3", ""],
+                ["", "new_arg", "default_value"],
             ],
         "args_warning": {"arg1":"warning message"},
         "args_transformer": "_default_transformer",
@@ -22,11 +24,23 @@ change_spec = {
 }
 ```
 
+- `alias`: a list of alias of main alias `path.to.old_api`, all alias will be replaced with main alias.
+- `update_to`: `path.to.old_api` will be replaced with this new api if specified.
+- `warning`: print specified warning message when `path.to.old_api` is found. This field will be ignored if `update_to` is specified.
+- `args_list`: is argument list of `path.to.old_api`.
+- `args_change`: a list of list. It contains following format:
+  - `["arg", "new_arg"]`: rename a argument, e.g. `func(arg=value)` -> `func(new_arg=value)`
+  - `["arg", ""]`: remove a argument, e.g. `func(arg=value)` -> `func()`
+  - `["", "new_arg", "default_value"]`: add a new argument, e.g. `func(arg=value)` -> `func(arg=value, new_arg=default_value)`
+- `args_warning`: print specified warning message for specified argument after apply `args_change`.
+- `args_transformer`: execute customized transformer on an [AST node](https://github.com/python/cpython/blob/75c80b0bda89debf312f075716b8c467d411f90e/Lib/lib2to3/pytree.py#L207), it will be called after applying `args_change` to do further refactor.
+
+
 ### Install
 1. install with pip
 
 ```bash
-pip install paddle1to2
+pip install -U paddle1to2
 paddle1to2 --help # show help
 paddle1to2 --inpath /path/to/model.py # upgrade your model from paddle-1.x to paddle-2.0
 ```
@@ -60,6 +74,18 @@ python -m paddle1to2 --inpath /path/to/model.py --refactor <refactor_name>
 ```
 
 use `python -m paddle1to2 -h` to see full list of all refactors.
+
+if you want to run all unittest, use command:
+
+```bash
+python -m unittest discover paddle1to2/tests/
+```
+or use command:
+
+```bash
+python -m unittest paddle1to2/tests/test_refactor.py
+```
+to run specific test file.
 
 ### Other Tools
 1. find pattern of specific code snippet, usage:

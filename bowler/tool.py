@@ -294,17 +294,27 @@ class BowlerTool(RefactoringTool):
         auto_yes = False
         result = ""
         accepted_hunks = ""
+        # print same filename header only once.
+        hunks_header = set()
         for hunk in hunks:
+            header = "{} {}".format(hunk[0], hunk[1])
             if self.hunk_processor(filename, hunk) is False:
                 continue
-
             if not self.silent:
-                for line in hunk:
-                    if line.startswith("---"):
-                        click.secho(line, fg="red", bold=True)
-                    elif line.startswith("+++"):
-                        click.secho(line, fg="green", bold=True)
-                    elif line.startswith("-"):
+                # print header, e.g.
+                # --- ./model.py
+                # +++ ./model.py
+                if header not in hunks_header:
+                    for line in hunk[:2]:
+                        if line.startswith("---"):
+                            click.secho(line, fg="red", bold=True)
+                        elif line.startswith("+++"):
+                            click.secho(line, fg="green", bold=True)
+                hunks_header.add(header)
+
+                # print diff content
+                for line in hunk[2:]:
+                    if line.startswith("-"):
                         click.secho(line, fg="red")
                     elif line.startswith("+"):
                         click.secho(line, fg="green")
