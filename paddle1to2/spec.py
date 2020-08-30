@@ -196,9 +196,10 @@ change_spec = {
     # "paddle.fluid.cuda_pinned_places": {
     #     "update_to": "paddle.fluid.cuda_pinned_places"
     # },
-    "paddle.fluid.in_dygraph_mode": {
-        "update_to": "paddle.incubate.hapi.dygraph_layer_patch.in_dygraph_mode"
-    },
+    # INCUBATE_WARNING
+    # "paddle.fluid.in_dygraph_mode": {
+    #     "update_to": "paddle.incubate.hapi.dygraph_layer_patch.in_dygraph_mode"
+    # },
     # FlUID_WARNING
     # "paddle.fluid.is_compiled_with_cuda": {
     #     "update_to": "paddle.fluid.is_compiled_with_cuda"
@@ -3620,9 +3621,10 @@ change_spec = {
     # "paddle.fluid.layers.Decoder": {
     #     "update_to": "paddle.fluid.layers.Decoder"
     # },
-    "paddle.fluid.layers.BeamSearchDecoder": {
-        "update_to": "paddle.incubate.hapi.text.BeamSearchDecoder"
-    },
+    # INCUBATE_WARNING
+    # "paddle.fluid.layers.BeamSearchDecoder": {
+    #     "update_to": "paddle.incubate.hapi.text.BeamSearchDecoder"
+    # },
     # FlUID_WARNING
     # "paddle.fluid.layers.rnn": {
     #     "update_to": "paddle.fluid.layers.rnn"
@@ -3832,9 +3834,11 @@ change_spec = {
         ]
     },
     "paddle.fluid.dygraph.Linear": {
+        "alias": ["paddle.fluid.dygraph.nn.Linear"],
         "update_to": "paddle.nn.Linear"
     },
     "paddle.fluid.dygraph.BatchNorm": {
+        "alias": ["paddle.fluid.dygraph.nn.BatchNorm"],
         "update_to": "paddle.nn.BatchNorm"
     },
     # TODO transformer
@@ -4441,6 +4445,7 @@ change_spec = {
         "update_to": "paddle.Tensor"
     },
     "paddle.fluid.ParamAttr": {
+        "alias": ["paddle.fluid.param_attr.ParamAttr"],
         "update_to": "paddle.ParamAttr"
     },
     "paddle.fluid.WeightNormParamAttr": {
