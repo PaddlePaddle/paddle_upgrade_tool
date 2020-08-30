@@ -195,6 +195,73 @@ class TestApiRename(unittest.TestCase):
         '''
         self._run(self.change_spec, input_src, expected_src)
  
+class TestArgsToKwargs(unittest.TestCase):
+    change_spec = {
+            "paddle.add": {
+                "args_list": ["x", "y"],
+                },
+            }
+    def _run(self, change_spec, input_src, expected_src):
+        input_src = textwrap.dedent(input_src).strip() + '\n'
+        expected_src = textwrap.dedent(expected_src).strip() + '\n'
+        output_src = _refactor_helper(args_to_kwargs, input_src, change_spec)
+        self.assertEqual(output_src, expected_src)
+
+    def test_args_to_kwargs(self):
+        input_src = '''
+        paddle.add(1,2)
+        paddle.add(1,y=2)
+        '''
+        expected_src = '''
+        paddle.add(x=1,y=2)
+        paddle.add(x=1,y=2)
+        '''
+        self._run(self.change_spec, input_src, expected_src)
+
+class TestRefactorKwargs(unittest.TestCase):    
+    change_spec = {
+            "paddle.add": {
+                "args_change": [
+                [
+                    "x",
+                    "x"
+                ],
+                [
+                    "out",
+                    ""
+                ],
+                [
+                    "",
+                    "name"
+                    "test"
+                ]
+            ],
+        }
+    }
+
+
+    def _run(self, change_spec, input_src, expected_src):
+        input_src = textwrap.dedent(input_src).strip() + '\n'
+        expected_src = textwrap.dedent(expected_src).strip() + '\n'
+        output_src = _refactor_helper(refactor_kwargs, input_src, change_spec)
+        self.assertEqual(output_src, expected_src)
+
+
+    def test_refactor_kwargs(self):
+        input_src = '''
+        paddle.add(x=1,out=2)
+        '''
+        expected_src = '''
+        paddle.add(x=1,name=test)
+        '''
+        self._run(self.change_spec, input_src, expected_src)
+
+
+
+
+
+
+
 
 if __name__ == '__main__':
     unittest.main()
