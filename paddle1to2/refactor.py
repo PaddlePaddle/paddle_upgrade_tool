@@ -394,107 +394,106 @@ def refactor_kwargs(q:Query, change_spec) -> "Query":
         if func_name not in change_spec:
             return
         
-        if "args_change" in change_spec[func_name]:
-            args_change = change_spec[func_name]['args_change']
+        args_change = change_spec[func_name].get('args_change', [])
 
-            for arg_tuple in args_change:
-                if len(arg_tuple) == 3:
-                    #add to end
-                    new_arg = arg_tuple[1]
-                    arg_val = arg_tuple[2]
-                    arg_node = KeywordArg(Name(new_arg), _get_leaf(arg_val))
-                    # f() -> f(new_arg = arg_val)
-                    if fp.children == [LParen(), RParen()]:
-                        fp.insert_child(1,arg_node )
-                        continue
+        for arg_tuple in args_change:
+            if len(arg_tuple) == 3:
+                #add to end
+                new_arg = arg_tuple[1]
+                arg_val = arg_tuple[2]
+                arg_node = KeywordArg(Name(new_arg), _get_leaf(arg_val))
+                # f() -> f(new_arg = arg_val)
+                if fp.children == [LParen(), RParen()]:
+                    fp.insert_child(1,arg_node )
+                    continue
 
-                    # f(1) -> f(1, new_arg = arg_val)
-                    if isinstance(fp.children[1], Leaf):
+                # f(1) -> f(1, new_arg = arg_val)
+                if isinstance(fp.children[1], Leaf):
+                    # arguent -> arglist
+                    fp.children[1] = ArgList([fp.children[1].clone(), Comma(), arg_node]).children[1]
+                    continue
+
+                # f(x=1) -> f(x=1, new_arg = arg_val)
+                if fp.children[1].type == SYMBOL.argument:
+                    if fp.children[1].children[0].value == new_arg:
+                        logger.warning("can not add the exist arg_name = {} ".format(new_arg) )
+                    else:
                         # arguent -> arglist
                         fp.children[1] = ArgList([fp.children[1].clone(), Comma(), arg_node]).children[1]
+                    continue
+
+                # f(x=1, y=2) -> f(x=1, y=2, new_arg= arg_val)
+                if fp.children[1].type == SYMBOL.arglist:
+                    is_exist = False
+                    for ln in fp.children[1].children:
+                        # kewword arg like x=1
+                        if isinstance(ln, Node) and ln.type == SYMBOL.argument:
+                            if ln.children[0].value == new_arg:
+                                logger.warning("can not add the exist arg_name = {} ".format(new_arg) )
+                                is_exist = True
+                                break
+                    # next tuple
+                    if is_exist:
                         continue
 
-                    # f(x=1) -> f(x=1, new_arg = arg_val)
-                    if fp.children[1].type == SYMBOL.argument:
-                        if fp.children[1].children[0].value == new_arg:
-                            logger.warning("can not add the exist arg_name = {} ".format(new_arg) )
+                    #insert new_arg_node to the end 
+                    fp.children[1].children.append(Comma())
+                    fp.children[1].children.append(arg_node)
+
+            elif len(arg_tuple) == 2:
+                old_arg = arg_tuple[0]
+                new_arg = arg_tuple[1]
+
+                #f() can not do rename or delete operation
+                if fp.children == [LParen(), RParen()]:
+                    logger.warning("can not rename or delete argument for empty function parameters")
+                    continue
+
+                #f(1) can not do rename or delete operation
+                if isinstance(fp.children[1], Leaf):
+                    logger.warning("can not rename or delete argument for non keyword parameters")
+                    continue
+
+                # f(x=1)
+                if fp.children[1].type == SYMBOL.argument:
+                    if fp.children[1].children[0].value != old_arg:
+                        logger.warning("can not find argument '{}' for delete or rename argument".format(old_arg))
+                    else:
+                        # f(x=1) -> f()
+                        if new_arg == "":
+                            fp.children = [LParen(), RParen()]
+                        # f(x=1) -> f(x_new = 1)
                         else:
-                            # arguent -> arglist
-                            fp.children[1] = ArgList([fp.children[1].clone(), Comma(), arg_node]).children[1]
-                        continue
+                            fp.children[1].children[0] = Name(new_arg)
+                    continue
 
-                    # f(x=1, y=2) -> f(x=1, y=2, new_arg= arg_val)
-                    if fp.children[1].type == SYMBOL.arglist:
-                        is_exist = False
-                        for ln in fp.children[1].children:
-                            # kewword arg like x=1
-                            if isinstance(ln, Node) and ln.type == SYMBOL.argument:
-                                if ln.children[0].value == new_arg:
-                                    logger.warning("can not add the exist arg_name = {} ".format(new_arg) )
-                                    is_exist = True
-                                    break
-                        # next tuple
-                        if is_exist:
-                            continue
-
-                        #insert new_arg_node to the end 
-                        fp.children[1].children.append(Comma())
-                        fp.children[1].children.append(arg_node)
-
-                elif len(arg_tuple) == 2:
-                    old_arg = arg_tuple[0]
-                    new_arg = arg_tuple[1]
-
-                    #f() can not do rename or delete operation
-                    if fp.children == [LParen(), RParen()]:
-                        logger.warning("can not rename or delete argument for empty function parameters")
-                        continue
-
-                    #f(1) can not do rename or delete operation
-                    if isinstance(fp.children[1], Leaf):
-                        logger.warning("can not rename or delete argument for non keyword parameters")
-                        continue
-
-                    # f(x=1)
-                    if fp.children[1].type == SYMBOL.argument:
-                        if fp.children[1].children[0].value != old_arg:
-                            logger.warning("can not find argument '{}' for delete or rename argument".format(old_arg))
-                        else:
-                            # f(x=1) -> f()
-                            if new_arg == "":
-                                fp.children = [LParen(), RParen()]
-                            # f(x=1) -> f(x_new = 1)
-                            else:
-                                fp.children[1].children[0] = Name(new_arg)
-                        continue
-
-                    # f(x=1, y=1)
-                    if fp.children[1].type == SYMBOL.arglist:
-                        is_exist = False
-                        for ln in fp.children[1].children:
-                            # kewword arg like x=1
-                            if isinstance(ln, Node) and ln.type == SYMBOL.argument:
-                                if ln.children[0].value == old_arg:
-                                    #delete argument
-                                    if new_arg == "":
-                                        if ln.next_sibling == Comma():
-                                            ln.next_sibling.remove()
-                                            ln.remove()
-                                        else:
-                                            if ln.prev_sibling == Comma():
-                                                ln.prev_sibling.remove()
-                                            ln.remove()
-                                    #rename argument
+                # f(x=1, y=1)
+                if fp.children[1].type == SYMBOL.arglist:
+                    is_exist = False
+                    for ln in fp.children[1].children:
+                        # kewword arg like x=1
+                        if isinstance(ln, Node) and ln.type == SYMBOL.argument:
+                            if ln.children[0].value == old_arg:
+                                #delete argument
+                                if new_arg == "":
+                                    if ln.next_sibling == Comma():
+                                        ln.next_sibling.remove()
+                                        ln.remove()
                                     else:
-                                        ln.children[0] = Name(new_arg)
-                                    
-                                    is_exist = True
-                                    break
-                        if not is_exist:
-                            logger.warning("can not find argument '{}' for delete or rename argument".format(old_arg))
+                                        if ln.prev_sibling == Comma():
+                                            ln.prev_sibling.remove()
+                                        ln.remove()
+                                #rename argument
+                                else:
+                                    ln.children[0] = Name(new_arg)
+                                
+                                is_exist = True
+                                break
+                    if not is_exist:
+                        logger.warning("can not find argument '{}' for delete or rename argument".format(old_arg))
 
-                else:
-                    logger.warning("the length of args_change tuple is not equal 2 or 3, api name ={}, tuple= {}".format(func_name, arg_tuple))
+            else:
+                logger.warning("the length of args_change tuple is not equal 2 or 3, api name ={}, tuple= {}".format(func_name, arg_tuple))
 
         transformer_func = None
         if "args_transformer" in change_spec[func_name]:
