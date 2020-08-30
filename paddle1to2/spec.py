@@ -1,10 +1,10 @@
 change_spec = {
-    "path.to.old_api": {
+    "paddle.to.old_api": {
         "alias": [
-            "path.to.old_api_alias1",
-            "path.to1.to2.old_api_alias2",
+            "paddle.to.old_api_alias1",
+            "paddle.to1.to2.old_api_alias2",
             ],
-        "update_to": "path.to.new_api",
+        "update_to": "paddle.to.new_api",
         "warning": "this api is deprecated.",
         "args_list": ["arg1", "arg2"],
         "args_change": [

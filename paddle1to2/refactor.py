@@ -9,9 +9,7 @@ from fissix.pygram import python_grammar, python_symbols
 from fissix.patcomp import PatternCompiler
 
 from paddle1to2.common import logger
-from paddle1to2 import processors, fixers, utils
-
-from paddle1to2.transformers import *
+from paddle1to2 import processors, fixers, utils, transformers
 
 # don't change the order if you don't know what you are doing.
 __all__ = [
@@ -247,25 +245,21 @@ def args_to_kwargs(q:Query, change_spec) -> "Query":
         a = path.to.api(x=1, y=2)
         ```
     """
+    # find all func call start with paddle
     pattern = """
     (
-        power< name=any* trailer<  '(' arglist=any* ')' > >
+        power< 'paddle' name=any* trailer<  '(' arglist=any* ')' > >
     )
     """
-    def _get_func_name(lns: list):
-        func_name = ""
-        for ln in lns:
-            if isinstance(ln, Leaf):
-                func_name = func_name + ln.value
-            elif isinstance(ln, Node):
-                for l in ln.leaves():
-                    func_name = func_name + l.value
-        return func_name
 
     def _modify_args_to_kwargs(node, capture, fn):
         args = capture["arglist"]
-        name = capture["name"]
-        func_name = _get_func_name(name)
+
+        #get paddle func full name
+        func_name = "paddle"
+        for node in capture["name"]:
+            for l in node.leaves():
+                func_name = func_name + l.value
 
         if func_name not in change_spec or 'args_list' not in change_spec[func_name]:
             return
@@ -314,25 +308,21 @@ def args_warning(q:Query, change_spec) -> "Query":
     """
     print warning if specified args are used.
     """
+    # find all func call start with paddle
     pattern = """
     (
-        power< name=any* trailer<  '(' arglist=any* ')' > >
+        power< 'paddle' name=any* trailer<  '(' arglist=any* ')' > >
     )
     """
-    def _get_func_name(lns: list):
-        func_name = ""
-        for ln in lns:
-            if isinstance(ln, Leaf):
-                func_name = func_name + ln.value
-            elif isinstance(ln, Node):
-                for l in ln.leaves():
-                    func_name = func_name + l.value
-        return func_name
 
     def _add_warning(node, capture, fn):
         args = capture["arglist"]
-        name = capture["name"]
-        func_name = _get_func_name(name)
+
+        #get paddle func full name
+        func_name = "paddle"
+        for node in capture["name"]:
+            for l in node.leaves():
+                func_name = func_name + l.value
 
         if func_name not in change_spec or not change_spec[func_name]["args_warning"]:
             return
@@ -364,20 +354,12 @@ def refactor_kwargs(q:Query, change_spec) -> "Query":
         a = path.to.api(k1_rename='v1', k3='v3')
         ```
     """
+    # find all func call start with paddle
     pattern = """
     (
-        power< name=any*  function_parameters=trailer<  '(' any* ')' > >
+        power< 'paddle' name=any*  function_parameters=trailer<  '(' any* ')' > >
     )
     """
-    def _get_func_name(lns: list):
-        func_name = ""
-        for ln in lns:
-            if isinstance(ln, Leaf):
-                func_name = func_name + ln.value
-            elif isinstance(ln, Node):
-                for l in ln.leaves():
-                    func_name = func_name + l.value
-        return func_name
 
     def _get_number_from_arglist(index, arg_list):
         i = 0
@@ -394,10 +376,14 @@ def refactor_kwargs(q:Query, change_spec) -> "Query":
                 pass
         return None
 
-    def _refector_args(node, capture, fn):
+    def _refector_args(node: LN, capture: Capture, fn: Filename) -> None:
         fp = capture["function_parameters"]
-        name = capture["name"]
-        func_name = _get_func_name(name)
+
+        #get paddle func full name
+        func_name = "paddle"
+        for node in capture["name"]:
+            for l in node.leaves():
+                func_name = func_name + l.value
 
         if func_name not in change_spec:
             return
@@ -459,7 +445,7 @@ def refactor_kwargs(q:Query, change_spec) -> "Query":
 
         transformer_func = None
         if "args_transformer" in change_spec[func_name]:
-            transformer_func = eval(change_spec[func_name]["args_transformer"])
+            transformer_func = eval("transformers." + change_spec[func_name]["args_transformer"])
             transformer_func(node, capture, fn)
 
     q.select(pattern).modify(_refector_args)
