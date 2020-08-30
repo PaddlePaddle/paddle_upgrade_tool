@@ -437,8 +437,8 @@ def refactor_kwargs(q:Query, change_spec) -> "Query":
                         continue
 
                     #insert new_arg_node to the end 
-                    fp.children[1].children.append(Comma())
-                    fp.children[1].children.append(arg_node)
+                    fp.children[1].append_child(Comma())
+                    fp.children[1].append_child(arg_node)
 
             elif len(arg_tuple) == 2:
                 old_arg = arg_tuple[0]
