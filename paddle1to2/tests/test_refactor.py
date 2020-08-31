@@ -177,10 +177,10 @@ class TestApiRename(unittest.TestCase):
     def _run(self, change_spec, input_src, expected_src):
         input_src = textwrap.dedent(input_src).strip() + '\n'
         expected_src = textwrap.dedent(expected_src).strip() + '\n'
-        output_src = _refactor_helper(api_rename_and_warning, input_src, change_spec)
+        output_src = _refactor_helper(api_rename, input_src, change_spec)
         self.assertEqual(output_src, expected_src)
 
-    def test_rename_and_warning(self):
+    def test_rename(self):
         input_src = '''
         import paddle
 

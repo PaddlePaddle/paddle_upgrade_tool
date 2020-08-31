@@ -3,6 +3,28 @@ from io import StringIO
 from fissix.pgen2 import driver
 from fissix import pytree
 from fissix.pygram import python_grammar, python_symbols
+from fissix.pytree import Leaf, Node
+
+from paddle1to2.common import logger
+
+def node2code(nodes, with_first_prefix=False):
+    """
+    convert a node or a list of nodes to code str, e.g.
+    "    import paddle" -> return "import paddle"
+    "    import     paddle" -> return "import     paddle"
+    """
+    if not isinstance(nodes, list):
+        nodes = [nodes]
+    code = ''
+    is_first_leaf = True
+    for node in nodes:
+        for leaf in node.leaves():
+            if is_first_leaf:
+                code = code + leaf.value
+                is_first_leaf = False
+            else:
+                code = code + str(leaf)
+    return code
 
 def code_repr(src: str):
     """
@@ -60,4 +82,20 @@ def startswith(module_path1, module_path2):
         if dotted_parts1[i] != dotted_parts2[i]:
             return False
     return True
+
+def log_debug(filename, lineno, msg):
+    _msg = "{}:{} {}".format(filename, lineno, msg)
+    logger.debug(_msg)
+
+def log_info(filename, lineno, msg):
+    _msg = "{}:{} {}".format(filename, lineno, msg)
+    logger.info(_msg)
+
+def log_warning(filename, lineno, msg):
+    _msg = "{}:{} {}".format(filename, lineno, msg)
+    logger.warning(_msg)
+
+def log_error(filename, lineno, msg):
+    _msg = "{}:{} {}".format(filename, lineno, msg)
+    logger.error(_msg)
 
