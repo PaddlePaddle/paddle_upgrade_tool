@@ -359,9 +359,10 @@ def refactor_kwargs(q:Query, change_spec) -> "Query":
                 if old_arg != "":
                     continue
 
-                arg_node = KeywordArg(Name(new_arg), _get_leaf(arg_val))
+                arg_node = KeywordArg(Name(new_arg, prefix=" "), _get_leaf(arg_val))
                 # f() -> f(new_arg = arg_val)
                 if func_para_node.children[0].type == TOKEN.LPAR and func_para_node.children[1].type == TOKEN.RPAR:
+                    arg_node = KeywordArg(Name(new_arg), _get_leaf(arg_val))
                     func_para_node.insert_child(1, arg_node)
                     log_info(fn, node.get_lineno(), "add keyword argument: {} = {}".format(new_arg, arg_val))
                     continue
@@ -429,7 +430,7 @@ def refactor_kwargs(q:Query, change_spec) -> "Query":
                             log_info(fn, node.get_lineno(), "delete keyword argument: {}".format(old_arg))
                         # f(x=1) -> f(x_new = 1)
                         else:
-                            func_para_node.children[1].children[0] = Name(new_arg)
+                            func_para_node.children[1].children[0] = Name(new_arg, func_para_node.children[1].children[0].prefix)
                             log_info(fn, node.get_lineno(), 'rename keyword argument from {} to {}'.format(old_arg, new_arg))
                     continue
 
@@ -452,7 +453,7 @@ def refactor_kwargs(q:Query, change_spec) -> "Query":
                                     log_info(fn, node.get_lineno(), 'delete keyword argument: {}'.format(old_arg))
                                 #rename argument
                                 else:
-                                    ln.children[0] = Name(new_arg)
+                                    ln.children[0] = Name(new_arg, ln.children[0].prefix)
                                     log_info(fn, node.get_lineno(), 'rename keyword argument from {} to {}'.format(old_arg, new_arg))
                                 
                                 is_exist = True
