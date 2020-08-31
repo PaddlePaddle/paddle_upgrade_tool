@@ -1,4 +1,8 @@
+import os
+import shutil
 from io import StringIO
+from datetime import datetime
+from fnmatch import filter
 
 from fissix.pgen2 import driver
 from fissix import pytree
@@ -98,4 +102,34 @@ def log_warning(filename, lineno, msg):
 def log_error(filename, lineno, msg):
     _msg = "{}:{} {}".format(filename, lineno, msg)
     logger.error(_msg)
+
+def _include_patterns(*patterns):
+    """Factory function that can be used with copytree() ignore parameter.
+
+    Arguments define a sequence of glob-style patterns
+    that are used to specify what files to NOT ignore.
+    Creates and returns a function that determines this for each directory
+    in the file hierarchy rooted at the source directory when used with
+    shutil.copytree().
+    """
+    def _ignore_patterns(path, names):
+        keep = set(name for pattern in patterns
+                            for name in filter(names, pattern))
+        ignore = set(name for name in names
+                        if name not in keep and not os.path.isdir(os.path.join(path, name)))
+        return ignore
+    return _ignore_patterns
+
+def backup_inpath(inpath, backup):
+    inpath = os.path.abspath(inpath)
+    backup = os.path.abspath(backup)
+    if not os.path.exists(backup):
+        os.makedirs(backup)
+    basename = os.path.basename(inpath)
+    bak_basename = basename + "_backup_" + datetime.now().strftime("%Y_%m_%d_%H_%M_%S_%f")
+    dst_path = os.path.join(backup, bak_basename)
+    if os.path.isfile(inpath):
+        shutil.copy(inpath, dst_path)
+    else:
+        shutil.copytree(inpath, dst_path, ignore=_include_patterns("*.py"))
 
