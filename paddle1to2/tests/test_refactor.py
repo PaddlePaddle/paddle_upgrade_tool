@@ -222,19 +222,9 @@ class TestRefactorKwargs(unittest.TestCase):
     change_spec = {
             "paddle.add": {
                 "args_change": [
-                [
-                    "x",
-                    "x"
-                ],
-                [
-                    "out",
-                    ""
-                ],
-                [
-                    "",
-                    "name",
-                    "test"
-                ]
+                [ "x", "x_new" ],
+                [ "out", "" ],
+                [ "", "name", "test" ]
             ],
         }
     }
@@ -250,9 +240,15 @@ class TestRefactorKwargs(unittest.TestCase):
     def test_refactor_kwargs(self):
         input_src = '''
         paddle.add(x=1,out=2)
+        paddle.add(1)
+        paddle.add()
+        paddle.add(a=1,b=2,c=3)
         '''
         expected_src = '''
-        paddle.add(x=1,name=test)
+        paddle.add(x_new=1,name=test)
+        paddle.add(1,name=test)
+        paddle.add(name=test)
+        paddle.add(a=1,b=2,c=3,name=test)
         '''
         self._run(self.change_spec, input_src, expected_src)
 
