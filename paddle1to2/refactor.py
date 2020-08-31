@@ -271,7 +271,7 @@ def args_to_kwargs(q:Query, change_spec) -> "Query":
 
         if isinstance(args[0], Leaf):
             if 1 != len(args_list):
-                logger.warn("argument list length not equal, raw func argument list length is 1, but expected length is {}".format(len(arg_list)))
+                logger.warning("argument list length not equal, raw func argument list length is 1, but expected length is {}".format(len(arg_list)))
                 return
 
             args[0].replace(KeywordArg(Name(args_list[0]), args[0].clone()))
@@ -279,7 +279,7 @@ def args_to_kwargs(q:Query, change_spec) -> "Query":
         elif isinstance(args[0], Node):
             if args[0].type == SYMBOL.arglist:
                 if len(args[0].children) != (len(args_list) *2-1):
-                    logger.warn("argument list length not equal, raw func argument list length is {}, but expected length is {}".format(int((len(args[0].children) +1 )/2), len(args_list)))
+                    logger.warning("argument list length not equal, raw func argument list length is {}, but expected length is {}".format(int((len(args[0].children) +1 )/2), len(args_list)))
                     return
 
                 child = args[0].children
@@ -292,12 +292,12 @@ def args_to_kwargs(q:Query, change_spec) -> "Query":
                         index = index + 1
             elif args[0].type == SYMBOL.argument:
                 if 1 != len(args_list):
-                    logger.warn("argument list length not equal, raw func argument list length is 1, but expected length is {}".format(len(args_list)))
+                    logger.warning("argument list length not equal, raw func argument list length is 1, but expected length is {}".format(len(args_list)))
                     return
 
                 raw_arg_name = args[0].children[0].value
                 if raw_arg_name != args_list[0]:
-                    logger.warn("exist function argument name ({}) not equal expected argument name ({})".format(raw_arg_name, args_list[0]))
+                    logger.warning("exist function argument name ({}) not equal expected argument name ({})".format(raw_arg_name, args_list[0]))
                     return
 
 
@@ -337,7 +337,7 @@ def args_warning(q:Query, change_spec) -> "Query":
                     arg_name = n.children[0].value
                     if arg_name in args_warning:
                         warning_info = args_warning[arg_name]
-                        logger.warn(warning_info)
+                        logger.warning(warning_info)
 
     q.select(pattern).modify(_add_warning)
     return q
@@ -500,7 +500,7 @@ def refactor_kwargs(q:Query, change_spec) -> "Query":
                 arg_name = func_para_node.children[1].children[0].value
                 if arg_name in args_warning:
                     warning_info = args_warning[arg_name]
-                    logger.warn(warning_info)
+                    logger.warning(warning_info)
 
             if func_para_node.children[1].type == SYMBOL.arglist:
                 for n in func_para_node.children[1].children:
@@ -508,7 +508,7 @@ def refactor_kwargs(q:Query, change_spec) -> "Query":
                         arg_name = n.children[0].value
                         if arg_name in args_warning:
                             warning_info = args_warning[arg_name]
-                            logger.warn(warning_info)
+                            logger.warning(warning_info)
 
         if "args_transformer" in change_spec[func_name]:
             transformer_func = eval("transformers." + change_spec[func_name]["args_transformer"])
