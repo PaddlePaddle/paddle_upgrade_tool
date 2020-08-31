@@ -390,14 +390,14 @@ def refactor_kwargs(q:Query, change_spec) -> "Query":
                 # f() -> f(new_arg = arg_val)
                 if fp.children == [LParen(), RParen()]:
                     fp.insert_child(1,arg_node )
-                    logger.info("{}:{} {} {}={}".format(filename, node.get_lineno(), 'add keyword argument: ', new_arg, arg_val))
+                    logger.info("{}:{} {} {}={}".format(fn, node.get_lineno(), 'add keyword argument: ', new_arg, arg_val))
                     continue
 
                 # f(1) -> f(1, new_arg = arg_val)
                 if isinstance(fp.children[1], Leaf):
                     # arguent -> arglist
                     fp.children[1] = ArgList([fp.children[1].clone(), Comma(), arg_node]).children[1]
-                    logger.info("{}:{} {} {}={}".format(filename, node.get_lineno(), 'add keyword argument: ', new_arg, arg_val))
+                    logger.info("{}:{} {} {}={}".format(fn, node.get_lineno(), 'add keyword argument: ', new_arg, arg_val))
                     continue
 
                 # f(x=1) -> f(x=1, new_arg = arg_val)
@@ -407,7 +407,7 @@ def refactor_kwargs(q:Query, change_spec) -> "Query":
                     else:
                         # arguent -> arglist
                         fp.children[1] = ArgList([fp.children[1].clone(), Comma(), arg_node]).children[1]
-                        logger.info("{}:{} {} {}={}".format(filename, node.get_lineno(), 'add keyword argument: ', new_arg, arg_val))
+                        logger.info("{}:{} {} {}={}".format(fn, node.get_lineno(), 'add keyword argument: ', new_arg, arg_val))
                     continue
 
                 # f(x=1, y=2) -> f(x=1, y=2, new_arg= arg_val)
@@ -427,7 +427,7 @@ def refactor_kwargs(q:Query, change_spec) -> "Query":
                     #insert new_arg_node to the end 
                     fp.children[1].append_child(Comma())
                     fp.children[1].append_child(arg_node)
-                    logger.info("{}:{} {} {}={}".format(filename, node.get_lineno(), 'add keyword argument: ', new_arg, arg_val))
+                    logger.info("{}:{} {} {}={}".format(fn, node.get_lineno(), 'add keyword argument: ', new_arg, arg_val))
 
             elif len(arg_tuple) == 2:
                 old_arg = arg_tuple[0]
@@ -451,11 +451,11 @@ def refactor_kwargs(q:Query, change_spec) -> "Query":
                         # f(x=1) -> f()
                         if new_arg == "":
                             fp.children = [LParen(), RParen()]
-                            logger.info("{}:{} {} {}".format(filename, node.get_lineno(), 'delete keyword argument: ', old_arg))
+                            logger.info("{}:{} {} {}".format(fn, node.get_lineno(), 'delete keyword argument: ', old_arg))
                         # f(x=1) -> f(x_new = 1)
                         else:
                             fp.children[1].children[0] = Name(new_arg)
-                            logger.info("{}:{} {} {} to {}".format(filename, node.get_lineno(), 'rename keyword argument from ', old_arg, new_arg))
+                            logger.info("{}:{} {} {} to {}".format(fn, node.get_lineno(), 'rename keyword argument from ', old_arg, new_arg))
                     continue
 
                 # f(x=1, y=1)
@@ -474,11 +474,11 @@ def refactor_kwargs(q:Query, change_spec) -> "Query":
                                         if ln.prev_sibling == Comma():
                                             ln.prev_sibling.remove()
                                         ln.remove()
-                                    logger.info("{}:{} {} {}".format(filename, node.get_lineno(), 'delete keyword argument: ', old_arg))
+                                    logger.info("{}:{} {} {}".format(fn, node.get_lineno(), 'delete keyword argument: ', old_arg))
                                 #rename argument
                                 else:
                                     ln.children[0] = Name(new_arg)
-                                    logger.info("{}:{} {} {} to {}".format(filename, node.get_lineno(), 'rename keyword argument from ', old_arg, new_arg))
+                                    logger.info("{}:{} {} {} to {}".format(fn, node.get_lineno(), 'rename keyword argument from ', old_arg, new_arg))
                                 
                                 is_exist = True
                                 break
