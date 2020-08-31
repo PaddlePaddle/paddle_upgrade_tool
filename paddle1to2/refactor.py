@@ -17,7 +17,6 @@ __all__ = [
     'refactor_import',
     'norm_api_alias',
     'args_to_kwargs',
-    'args_warning',
     'refactor_kwargs',
     'api_rename_and_warning',
     'refactor_syntax',
@@ -303,43 +302,6 @@ def args_to_kwargs(q:Query, change_spec) -> "Query":
 
     q.select(pattern).modify(_modify_args_to_kwargs)
 
-    return q
-
-def args_warning(q:Query, change_spec) -> "Query":
-    """
-    print warning if specified args are used.
-    """
-    # find all func call start with paddle
-    pattern = """
-    (
-        power< 'paddle' name=any* trailer<  '(' arglist=any* ')' > >
-    )
-    """
-
-    def _add_warning(node, capture, fn):
-        args = capture["arglist"]
-
-        #get paddle func full name
-        func_name = "paddle"
-        for node in capture["name"]:
-            for l in node.leaves():
-                func_name = func_name + l.value
-
-        if func_name not in change_spec or "args_warning" not in change_spec[func_name]:
-            return
-        
-        args_warning = change_spec[func_name]["args_warning"]
-
-        if args and args[0].type == SYMBOL.arglist:
-            child = args[0].children
-            for n in child:
-                if isinstance(n, Node) and n.type == SYMBOL.argument:
-                    arg_name = n.children[0].value
-                    if arg_name in args_warning:
-                        warning_info = args_warning[arg_name]
-                        logger.warning(warning_info)
-
-    q.select(pattern).modify(_add_warning)
     return q
 
 def refactor_kwargs(q:Query, change_spec) -> "Query":
