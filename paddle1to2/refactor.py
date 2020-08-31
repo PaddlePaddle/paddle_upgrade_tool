@@ -498,9 +498,9 @@ def refactor_kwargs(q:Query, change_spec) -> "Query":
             args_warning = change_spec[func_name]["args_warning"]
             if func_para_node.children[1].type == SYMBOL.argument:
                 arg_name = func_para_node.children[1].children[0].value
-                    if arg_name in args_warning:
-                        warning_info = args_warning[arg_name]
-                        logger.warn(warning_info)
+                if arg_name in args_warning:
+                    warning_info = args_warning[arg_name]
+                    logger.warn(warning_info)
 
             if func_para_node.children[1].type == SYMBOL.arglist:
                 for n in func_para_node.children[1].children:
