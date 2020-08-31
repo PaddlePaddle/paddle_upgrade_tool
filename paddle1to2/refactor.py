@@ -382,14 +382,19 @@ def refactor_kwargs(q:Query, change_spec) -> "Query":
         args_change = change_spec[func_name].get('args_change', [])
 
         for arg_tuple in args_change:
+            # add new keyword argument
             if len(arg_tuple) == 3:
-                #add to end
+                old_arg = arg_tuple[0]
                 new_arg = arg_tuple[1]
                 arg_val = arg_tuple[2]
+                # old_arg is not empty, do nothing
+                if old_arg != "":
+                    continue
+
                 arg_node = KeywordArg(Name(new_arg), _get_leaf(arg_val))
                 # f() -> f(new_arg = arg_val)
-                if func_para_node.children == [LParen(), RParen()]:
-                    func_para_node.insert_child(1,arg_node )
+                if func_para_node.children[0].type == TOKEN.LPAR and func_para_node.children[1].type == TOKEN.RPAR:
+                    func_para_node.insert_child(1, arg_node)
                     logger.info("{}:{} {} {}={}".format(fn, node.get_lineno(), 'add keyword argument: ', new_arg, arg_val))
                     continue
 
@@ -424,11 +429,11 @@ def refactor_kwargs(q:Query, change_spec) -> "Query":
                     if is_exist:
                         continue
 
-                    #insert new_arg_node to the end 
+                    #insert new_arg_node to the end
                     func_para_node.children[1].append_child(Comma())
                     func_para_node.children[1].append_child(arg_node)
                     logger.info("{}:{} {} {}={}".format(fn, node.get_lineno(), 'add keyword argument: ', new_arg, arg_val))
-
+            # delete or rename keyword argument 
             elif len(arg_tuple) == 2:
                 old_arg = arg_tuple[0]
                 new_arg = arg_tuple[1]
@@ -487,6 +492,23 @@ def refactor_kwargs(q:Query, change_spec) -> "Query":
 
             else:
                 logger.warning("the length of args_change tuple is not equal 2 or 3, api name ={}, tuple= {}".format(func_name, arg_tuple))
+
+        # if api in args_warning, print warning info
+        if "args_warning" in change_spec[func_name]:
+            args_warning = change_spec[func_name]["args_warning"]
+                if func_para_node.children[1].type == SYMBOL.argument:
+                    arg_name = func_para_node.children[1].children[0].value
+                        if arg_name in args_warning:
+                            warning_info = args_warning[arg_name]
+                            logger.warn(warning_info)
+
+                if func_para_node.children[1].type == SYMBOL.arglist:
+                    for n in func_para_node.children[1].children:
+                        if isinstance(n, Node) and n.type == SYMBOL.argument:
+                            arg_name = n.children[0].value
+                            if arg_name in args_warning:
+                                warning_info = args_warning[arg_name]
+                                logger.warn(warning_info)
 
         if "args_transformer" in change_spec[func_name]:
             transformer_func = eval("transformers." + change_spec[func_name]["args_transformer"])
