@@ -229,12 +229,8 @@ def norm_api_alias(q: Query, change_spec) -> "Query":
         main_alias = alias_map[alias]
         update_to = change_spec[main_alias].get('update_to', None)
         # if main_alias contains "update_to" field, rename alias to "update_to" directly
-        if update_to is None:
-            utils.replace_module_path(node, alias, main_alias)
-            log_warning(filename, node.get_lineno(), '{} -> {}'.format(alias, main_alias))
-        else:
-            utils.replace_module_path(node, alias, update_to)
-            log_warning(filename, node.get_lineno(), '{} -> {}'.format(alias, update_to))
+        utils.replace_module_path(node, alias, main_alias)
+        log_warning(filename, node.get_lineno(), '{} -> {}'.format(alias, main_alias))
     q.select(pattern).modify(_norm)
 
     return q
@@ -276,7 +272,7 @@ def args_to_kwargs(q:Query, change_spec) -> "Query":
 
         if isinstance(args[0], Leaf):
             if 1 != len(args_list):
-                warning_msg = "argument list length not equal, raw func argument list length is 1, but expected length is {}".format(len(arg_list))
+                warning_msg = "argument list length not equal, raw func argument list length is 1, but expected length is {}".format(len(args_list))
                 log_warning(fn, node.get_lineno(), warning_msg)
                 return
 
