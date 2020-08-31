@@ -10,6 +10,7 @@ from fissix.patcomp import PatternCompiler
 
 from paddle1to2.common import logger
 from paddle1to2 import processors, fixers, utils
+from paddle1to2.utils import log_debug, log_info, log_warning, log_error
 
 
 # don't change the order if you don't know what you are doing.
@@ -20,7 +21,7 @@ __all__ = [
     'args_to_kwargs',
     'args_warning',
     'refactor_kwargs',
-    'api_rename_and_warning',
+    'api_rename',
     'refactor_syntax',
     'post_refactor',
     ]
@@ -159,6 +160,7 @@ def refactor_import(q: Query, change_spec) -> "Query":
                     node.replace(new_node.children)
                 else:
                     node.replace(new_node)
+                log_info(filename, node.get_lineno(), "{} -> {}".format(utils.node2code(node), utils.node2code(new_node)))
     q.modify(_full_module_path)
 
     # remove as_import and from_import
@@ -170,6 +172,7 @@ def refactor_import(q: Query, change_spec) -> "Query":
             prefix = _node.prefix
             p = _node.parent
             _node.remove()
+            log_warning(filename, p.get_lineno(), 'remove "{}"'.format(utils.node2code(_node)))
             # delete NEWLINE node after delete as_import or from_import
             if p and p.children and len(p.children) == 1 and p.children[0].type == TOKEN.NEWLINE:
                 p.children[0].remove()
@@ -186,7 +189,7 @@ def refactor_import(q: Query, change_spec) -> "Query":
             return
         if paddle_found:
             touch_import(None, 'paddle', node)
-            logger.info("{}:{} {}".format(filename, node.get_lineno(), 'add "import paddle"'))
+            log_info(filename, node.get_lineno(), 'add "import paddle"')
             paddle_imported = True
     q.modify(_add_import)
 
@@ -229,8 +232,10 @@ def norm_api_alias(q: Query, change_spec) -> "Query":
         # if main_alias contains "update_to" field, rename alias to "update_to" directly
         if update_to is None:
             utils.replace_module_path(node, alias, main_alias)
+            log_warning(filename, node.get_lineno(), '{} -> {}'.format(alias, main_alias))
         else:
             utils.replace_module_path(node, alias, update_to)
+            log_warning(filename, node.get_lineno(), '{} -> {}'.format(alias, update_to))
     q.select(pattern).modify(_norm)
 
     return q
@@ -367,7 +372,7 @@ def refactor_kwargs(q:Query, change_spec) -> "Query":
     """
     return q
 
-def api_rename_and_warning(q:Query, change_spec) -> "Query":
+def api_rename(q:Query, change_spec) -> "Query":
     """
     1. rename old api to new api. e.g.
         origin code snippet:
@@ -392,7 +397,7 @@ def api_rename_and_warning(q:Query, change_spec) -> "Query":
             warning_map[main_alias] = warning
 
     pattern = """ power< 'paddle' trailer< any* >* > """
-    def _rename_and_warning(node: LN, capture: Capture, filename: Filename) -> None:
+    def _api_rename(node: LN, capture: Capture, filename: Filename) -> None:
         code = ''
         for leaf in node.leaves():
             code = code + leaf.value
@@ -416,9 +421,8 @@ def api_rename_and_warning(q:Query, change_spec) -> "Query":
             utils.replace_module_path(node, api, rename_map[api])
         # if not found rename and found warning, print warning
         elif found_warning:
-            warning_msg = "{}:{} {}".format(filename, node.get_lineno(), warning_map[api])
-            logger.warning(warning_msg)
-    q.select(pattern).modify(_rename_and_warning)
+            log_warning(filename, node.get_lineno(), warning_map[api])
+    q.select(pattern).modify(_api_rename)
 
     return q
 
