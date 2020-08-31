@@ -496,19 +496,19 @@ def refactor_kwargs(q:Query, change_spec) -> "Query":
         # if api in args_warning, print warning info
         if "args_warning" in change_spec[func_name]:
             args_warning = change_spec[func_name]["args_warning"]
-                if func_para_node.children[1].type == SYMBOL.argument:
-                    arg_name = func_para_node.children[1].children[0].value
+            if func_para_node.children[1].type == SYMBOL.argument:
+                arg_name = func_para_node.children[1].children[0].value
+                    if arg_name in args_warning:
+                        warning_info = args_warning[arg_name]
+                        logger.warn(warning_info)
+
+            if func_para_node.children[1].type == SYMBOL.arglist:
+                for n in func_para_node.children[1].children:
+                    if isinstance(n, Node) and n.type == SYMBOL.argument:
+                        arg_name = n.children[0].value
                         if arg_name in args_warning:
                             warning_info = args_warning[arg_name]
                             logger.warn(warning_info)
-
-                if func_para_node.children[1].type == SYMBOL.arglist:
-                    for n in func_para_node.children[1].children:
-                        if isinstance(n, Node) and n.type == SYMBOL.argument:
-                            arg_name = n.children[0].value
-                            if arg_name in args_warning:
-                                warning_info = args_warning[arg_name]
-                                logger.warn(warning_info)
 
         if "args_transformer" in change_spec[func_name]:
             transformer_func = eval("transformers." + change_spec[func_name]["args_transformer"])
