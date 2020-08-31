@@ -325,7 +325,7 @@ def args_warning(q:Query, change_spec) -> "Query":
             for l in node.leaves():
                 func_name = func_name + l.value
 
-        if func_name not in change_spec or not change_spec[func_name]["args_warning"]:
+        if func_name not in change_spec or "args_warning" not in change_spec[func_name]:
             return
         
         args_warning = change_spec[func_name]["args_warning"]
@@ -367,21 +367,6 @@ def refactor_kwargs(q:Query, change_spec) -> "Query":
         else:
             return Leaf(TOKEN.NAME, arg_val)
 
-    def _get_number_from_arglist(index, arg_list):
-        i = 0
-        for n in arg_list:
-            if n.type == SYMBOL.argument:
-                if i == index:
-                    return n.children[2].clone()
-                i = i+1
-            if n.type == TOKEN.NUMBER:
-                if i == index:
-                    return n.clone()
-                i = i+1
-            else:
-                pass
-        return None
-
     def _refector_args(node: LN, capture: Capture, fn: Filename) -> None:
         fp = capture["function_parameters"]
 
@@ -405,12 +390,14 @@ def refactor_kwargs(q:Query, change_spec) -> "Query":
                 # f() -> f(new_arg = arg_val)
                 if fp.children == [LParen(), RParen()]:
                     fp.insert_child(1,arg_node )
+                    logger.info("{}:{} {} {}={}".format(filename, node.get_lineno(), 'add keyword argument: ', new_arg, arg_val))
                     continue
 
                 # f(1) -> f(1, new_arg = arg_val)
                 if isinstance(fp.children[1], Leaf):
                     # arguent -> arglist
                     fp.children[1] = ArgList([fp.children[1].clone(), Comma(), arg_node]).children[1]
+                    logger.info("{}:{} {} {}={}".format(filename, node.get_lineno(), 'add keyword argument: ', new_arg, arg_val))
                     continue
 
                 # f(x=1) -> f(x=1, new_arg = arg_val)
@@ -420,6 +407,7 @@ def refactor_kwargs(q:Query, change_spec) -> "Query":
                     else:
                         # arguent -> arglist
                         fp.children[1] = ArgList([fp.children[1].clone(), Comma(), arg_node]).children[1]
+                        logger.info("{}:{} {} {}={}".format(filename, node.get_lineno(), 'add keyword argument: ', new_arg, arg_val))
                     continue
 
                 # f(x=1, y=2) -> f(x=1, y=2, new_arg= arg_val)
@@ -439,6 +427,7 @@ def refactor_kwargs(q:Query, change_spec) -> "Query":
                     #insert new_arg_node to the end 
                     fp.children[1].append_child(Comma())
                     fp.children[1].append_child(arg_node)
+                    logger.info("{}:{} {} {}={}".format(filename, node.get_lineno(), 'add keyword argument: ', new_arg, arg_val))
 
             elif len(arg_tuple) == 2:
                 old_arg = arg_tuple[0]
@@ -451,7 +440,7 @@ def refactor_kwargs(q:Query, change_spec) -> "Query":
 
                 #f(1) can not do rename or delete operation
                 if isinstance(fp.children[1], Leaf):
-                    logger.warning("can not rename or delete argument for non keyword parameters")
+                    logger.warning("can not rename or delete argument for none keyword parameters")
                     continue
 
                 # f(x=1)
@@ -462,9 +451,11 @@ def refactor_kwargs(q:Query, change_spec) -> "Query":
                         # f(x=1) -> f()
                         if new_arg == "":
                             fp.children = [LParen(), RParen()]
+                            logger.info("{}:{} {} {}".format(filename, node.get_lineno(), 'delete keyword argument: ', old_arg))
                         # f(x=1) -> f(x_new = 1)
                         else:
                             fp.children[1].children[0] = Name(new_arg)
+                            logger.info("{}:{} {} {} to {}".format(filename, node.get_lineno(), 'rename keyword argument from ', old_arg, new_arg))
                     continue
 
                 # f(x=1, y=1)
@@ -483,9 +474,11 @@ def refactor_kwargs(q:Query, change_spec) -> "Query":
                                         if ln.prev_sibling == Comma():
                                             ln.prev_sibling.remove()
                                         ln.remove()
+                                    logger.info("{}:{} {} {}".format(filename, node.get_lineno(), 'delete keyword argument: ', old_arg))
                                 #rename argument
                                 else:
                                     ln.children[0] = Name(new_arg)
+                                    logger.info("{}:{} {} {} to {}".format(filename, node.get_lineno(), 'rename keyword argument from ', old_arg, new_arg))
                                 
                                 is_exist = True
                                 break
@@ -495,7 +488,6 @@ def refactor_kwargs(q:Query, change_spec) -> "Query":
             else:
                 logger.warning("the length of args_change tuple is not equal 2 or 3, api name ={}, tuple= {}".format(func_name, arg_tuple))
 
-        transformer_func = None
         if "args_transformer" in change_spec[func_name]:
             transformer_func = eval("transformers." + change_spec[func_name]["args_transformer"])
             transformer_func(node, capture, fn)
