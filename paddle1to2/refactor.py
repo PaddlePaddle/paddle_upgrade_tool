@@ -249,7 +249,7 @@ def args_to_kwargs(q:Query, change_spec) -> "Query":
     # find all func call start with paddle
     pattern = """
     (
-        power< 'paddle' name=any* trailer<  '(' arglist=any* ')' > >
+        power< name=('paddle' any*) trailer<  '(' arglist=any* ')' > >
     )
     """
 
@@ -257,7 +257,7 @@ def args_to_kwargs(q:Query, change_spec) -> "Query":
         args = capture["arglist"]
 
         #get paddle func full name
-        func_name = "paddle"
+        func_name = ""
         for node in capture["name"]:
             for l in node.leaves():
                 func_name = func_name + l.value
@@ -358,7 +358,7 @@ def refactor_kwargs(q:Query, change_spec) -> "Query":
     # find all func call start with paddle
     pattern = """
     (
-        power< 'paddle' name=any*  function_parameters=trailer<  '(' any* ')' > >
+        power< name=('paddle' any*) function_parameters=trailer<  '(' any* ')' > >
     )
     """
     def _get_leaf(arg_val)->Leaf:
@@ -371,7 +371,7 @@ def refactor_kwargs(q:Query, change_spec) -> "Query":
         func_para_node = capture["function_parameters"]
 
         #get paddle func full name
-        func_name = "paddle"
+        func_name = ""
         for node in capture["name"]:
             for l in node.leaves():
                 func_name = func_name + l.value
