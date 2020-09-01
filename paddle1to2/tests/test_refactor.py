@@ -5,7 +5,7 @@ import textwrap
 from tempfile import NamedTemporaryFile
 
 from bowler import Query
-from paddle1to2.refactor import * 
+from paddle1to2.refactor import *
 
 def _refactor_helper(refactor_func, input_src, change_spec) -> str:
     try:
@@ -194,7 +194,7 @@ class TestApiRename(unittest.TestCase):
         layer = paddle.fluid.Layer_With_Underscore()
         '''
         self._run(self.change_spec, input_src, expected_src)
- 
+
 class TestArgsToKwargs(unittest.TestCase):
     change_spec = {
             "paddle.add": {
@@ -218,7 +218,7 @@ class TestArgsToKwargs(unittest.TestCase):
         '''
         self._run(self.change_spec, input_src, expected_src)
 
-class TestRefactorKwargs(unittest.TestCase):    
+class TestRefactorKwargs(unittest.TestCase):
     change_spec = {
         "paddle.add": {
             "args_change": [
@@ -252,6 +252,151 @@ class TestRefactorKwargs(unittest.TestCase):
         paddle.add(a=1, b=2, c=3, name=test)
         '''
         self._run(self.change_spec, input_src, expected_src)
+
+
+class TestWithRefactor(unittest.TestCase):
+    change_spec = {}
+
+    def _run(self, change_spec, input_src, expected_src):
+        input_src = textwrap.dedent(input_src).strip() + '\n'
+        expected_src = textwrap.dedent(expected_src).strip() + '\n'
+        output_src = _refactor_helper(refactor_with, input_src, change_spec)
+        self.assertEqual(output_src, expected_src)
+
+    def test_rename(self):
+        input_src = '''
+        import paddle
+
+        with paddle.fluid.dygraph.guard(place):
+            pass
+
+        with paddle.fluid.dygraph.guard():
+            pass
+        '''
+        expected_src = '''
+        import paddle
+
+        paddle.disable_static(place)
+        pass
+
+        paddle.disable_static()
+        pass
+        '''
+        self._run(self.change_spec, input_src, expected_src)
+
+        input_src = '''
+        import paddle
+
+        with fluid.dygraph.guard(place):
+            pass
+            pass
+
+        with fluid.dygraph.guard():
+            pass
+            pass
+        '''
+        expected_src = '''
+        import paddle
+
+        paddle.disable_static(place)
+        pass
+        pass
+
+        paddle.disable_static()
+        pass
+        pass
+        '''
+        self._run(self.change_spec, input_src, expected_src)
+
+        input_src = '''
+        import paddle
+
+        with dygraph.guard(place):
+            pass
+            pass
+            pass
+
+        with dygraph.guard():
+            pass
+            pass
+            pass
+        '''
+        expected_src = '''
+        import paddle
+
+        paddle.disable_static(place)
+        pass
+        pass
+        pass
+
+        paddle.disable_static()
+        pass
+        pass
+        pass
+        '''
+        self._run(self.change_spec, input_src, expected_src)
+
+        input_src = '''
+        import paddle
+
+        # comment line1
+        with dygraph.guard(place):
+            pass
+            pass
+
+        # comment line2
+        # comment line3
+        with dygraph.guard():
+            pass
+            pass
+        '''
+        expected_src = '''
+        import paddle
+
+        # comment line1
+        paddle.disable_static(place)
+        pass
+        pass
+
+        # comment line2
+        # comment line3
+        paddle.disable_static()
+        pass
+        pass
+        '''
+        self._run(self.change_spec, input_src, expected_src)
+
+        input_src = '''
+        import paddle
+
+        if True is True:
+            pass
+            if place is None:
+                pass
+                with paddle.fluid.dygraph.guard():
+                    pass
+                    pass
+                pass
+            else:
+                pass
+        '''
+        expected_src = '''
+        import paddle
+
+        if True is True:
+            pass
+            if place is None:
+                pass
+                paddle.disable_static()
+                pass
+                pass
+                pass
+            else:
+                pass
+        '''
+        self._run(self.change_spec, input_src, expected_src)
+
+
 
 if __name__ == '__main__':
     unittest.main()

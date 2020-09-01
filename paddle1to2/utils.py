@@ -133,3 +133,15 @@ def backup_inpath(inpath, backup):
     else:
         shutil.copytree(inpath, dst_path, ignore=_include_patterns("*.py"))
 
+def dec_indent(indent, count=1):
+    """
+    decrease indent, e.g.
+    if indent = "        ", and count = 1, return "    ",
+    if indent = "        ", and count = 2, return "",
+    """
+    if indent.endswith('\t'):
+        indent = indent[:len(indent) - 1 * count]
+    elif indent.endswith('    '):
+        indent = indent[:len(indent) - 4 * count]
+    return indent
+

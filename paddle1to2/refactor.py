@@ -3,7 +3,7 @@ from bowler.helpers import power_parts, quoted_parts, dotted_parts
 from bowler.types import LN, Capture, Filename, SYMBOL, TOKEN
 
 from fissix.pytree import Leaf, Node, type_repr
-from fissix.fixer_util import Attr, Comma, Dot, LParen, Name, Newline, RParen, KeywordArg, Number, ArgList
+from fissix.fixer_util import Attr, Comma, Dot, LParen, Name, Newline, RParen, KeywordArg, Number, ArgList, Newline
 from fissix.fixer_util import is_import, touch_import, find_root
 from fissix.pygram import python_grammar, python_symbols
 from fissix.patcomp import PatternCompiler
@@ -21,7 +21,7 @@ __all__ = [
     'args_to_kwargs',
     'refactor_kwargs',
     'api_rename',
-    'refactor_syntax',
+    'refactor_with',
     'post_refactor',
     ]
 
@@ -542,9 +542,9 @@ def api_rename(q:Query, change_spec) -> "Query":
 
     return q
 
-def refactor_syntax(q:Query, change_spec) -> "Query":
+def refactor_with(q:Query, change_spec) -> "Query":
     """
-    refactor syntax, such as removing "with" statement. e.g.
+    refactor with syntax, e.g.
     origin code snippet:
         ```
         with paddle.fluid.dygraph.guard(place):
@@ -556,6 +556,67 @@ def refactor_syntax(q:Query, change_spec) -> "Query":
         path.to.api()
         ```
     """
+    pattern = "with=with_stmt< 'with' guard=(power< api=(( 'paddle' | 'fluid' | 'dygraph' ) trailer< '.' NAME >* trailer< '.' 'guard' > ) arg_list=trailer< '(' any* ')' > >) any* suite=suite< any* > any* >"
+    def _remove_with_dygraph_guard(node: LN, capture: Capture, filename: Filename) -> None:
+        # index of with_node, with_node will be replaced with simple_stmt node
+        with_node = capture['with']
+        parent = with_node.parent
+        idx = None
+        for i, child in enumerate(parent.children):
+            if child is with_node:
+                idx = i
+                break
+
+        # create simple_stmt node for "paddle.disable_static"
+        arg_list_nodes = capture['arg_list']
+        simple_stmt = Node(SYMBOL.simple_stmt, [Newline()])
+        simple_stmt.insert_child(0, utils.code_repr('paddle.disable_static' + str(arg_list_nodes)))
+        simple_stmt.prefix = with_node.prefix
+
+        suite_node = capture['suite']
+        # remove first newline
+        for node in suite_node.children:
+            if not isinstance(node, Leaf):
+                continue
+            if node.type == TOKEN.NEWLINE:
+                node.remove()
+                break
+        # remove first indent node, and add indent prefix to sibling node.
+        indent = None
+        for node in suite_node.children:
+            if not isinstance(node, Leaf):
+                continue
+            if node.type == TOKEN.INDENT:
+                indent = node.value
+                if node.next_sibling is not None:
+                    node.next_sibling.prefix = node.prefix + indent
+                node.remove()
+                break
+        # remove last dedent node
+        for node in suite_node.children[::-1]:
+            if not isinstance(node, Leaf):
+                continue
+            if node.type == TOKEN.DEDENT:
+                if with_node.next_sibling is not None:
+                    with_node.next_sibling.prefix = node.prefix
+                node.remove()
+                break
+
+        # unindent all code in suite
+        for node in suite_node.leaves():
+            if node.type == TOKEN.INDENT:
+                node.value = utils.dec_indent(node.value)
+            else:
+                node.prefix = utils.dec_indent(node.prefix)
+
+        with_node.remove()
+        parent.insert_child(idx, simple_stmt)
+        idx += 1
+        for node in suite_node.children:
+            parent.insert_child(idx, node)
+            idx += 1
+
+    q.select(pattern).modify(_remove_with_dygraph_guard)
     return q
 
 def post_refactor(q:Query, change_spec) -> "Query":
