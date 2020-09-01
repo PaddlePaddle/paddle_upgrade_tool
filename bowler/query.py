@@ -56,8 +56,8 @@ QM = Callable[..., Q]
 log = logging.getLogger(__name__)
 
 
-def selector(pattern: str) -> Callable[[QM], QM]:
-    def wrapper(fn: QM) -> QM:
+def selector(pattern):
+    def wrapper(fn):
         selector = fn.__name__.replace("select_", "").lower()
         SELECTORS[selector] = pattern
 
@@ -65,7 +65,7 @@ def selector(pattern: str) -> Callable[[QM], QM]:
         arg_names = list(signature.parameters)[1:]
 
         @wraps(fn)
-        def wrapped(self: Q, *args, **kwargs) -> Q:
+        def wrapped(self, *args, **kwargs):
             for arg, value in zip(arg_names, args):
                 if hasattr(value, "__name__"):
                     kwargs["source"] = value
@@ -87,15 +87,15 @@ def selector(pattern: str) -> Callable[[QM], QM]:
 class Query:
     def __init__(
         self,
-        *paths: Union[str, List[str]],
-        filename_matcher: Optional[FilenameMatcher] = None,
-    ) -> None:
-        self.paths: List[str] = []
-        self.transforms: List[Transform] = []
-        self.processors: List[Processor] = []
-        self.retcode: Optional[int] = None
+        *paths,
+        filename_matcher = None,
+    ):
+        self.paths = []
+        self.transforms = []
+        self.processors = []
+        self.retcode = None
         self.filename_matcher = filename_matcher
-        self.exceptions: List[BowlerException] = []
+        self.exceptions = []
 
         for path in paths:
             if isinstance(path, str):
@@ -113,7 +113,7 @@ class Query:
         file_input< any* >
     """
     )
-    def select_root(self) -> "Query":
+    def select_root(self):
         ...
 
     @selector(
@@ -166,7 +166,7 @@ class Query:
         )
     """
     )
-    def select_module(self, name: str) -> "Query":
+    def select_module(self, name):
         ...
 
     @selector(
@@ -217,7 +217,7 @@ class Query:
         )
     """
     )
-    def select_class(self, name: str) -> "Query":
+    def select_class(self, name):
         ...
 
     @selector(
@@ -239,7 +239,7 @@ class Query:
         )
     """
     )
-    def select_subclass(self, name: str) -> "Query":
+    def select_subclass(self, name):
         ...
 
     @selector(
@@ -276,7 +276,7 @@ class Query:
         )
     """
     )
-    def select_attribute(self, name: str) -> "Query":
+    def select_attribute(self, name):
         ...
 
     @selector(
@@ -330,7 +330,7 @@ class Query:
 
     """
     )
-    def select_method(self, name: str) -> "Query":
+    def select_method(self, name):
         ...
 
     @selector(
@@ -376,7 +376,7 @@ class Query:
         )
     """
     )
-    def select_function(self, name: str) -> "Query":
+    def select_function(self, name):
         ...
 
     @selector(
@@ -391,30 +391,30 @@ class Query:
         )
     """
     )
-    def select_var(self, name: str) -> "Query":
+    def select_var(self, name):
         ...
 
     @selector("""{pattern}""")
-    def select_pattern(self, pattern: str) -> "Query":
+    def select_pattern(self, pattern):
         ...
 
-    def select(self, pattern: str) -> "Query":
+    def select(self, pattern):
         return self.select_pattern(pattern)
 
     @property
-    def current(self) -> Transform:
+    def current(self):
         if not self.transforms:
             raise ValueError("no selectors used")
 
         return self.transforms[-1]
 
-    def is_filename(self, include: str = None, exclude: str = None) -> "Query":
+    def is_filename(self, include = None, exclude = None):
         if include:
             regex = re.compile(include)
 
             def filter_filename_include(
-                node: LN, capture: Capture, filename: Filename
-            ) -> bool:
+                node, capture, filename
+            ):
                 return regex.search(filename) is not None
 
             self.current.filters.append(filter_filename_include)
@@ -423,30 +423,30 @@ class Query:
             regex = re.compile(exclude)
 
             def filter_filename_exclude(
-                node: LN, capture: Capture, filename: Filename
-            ) -> bool:
+                node, capture, filename
+            ):
                 return regex.search(filename) is None
 
             self.current.filters.append(filter_filename_exclude)
 
         return self
 
-    def is_call(self) -> "Query":
-        def filter_is_call(node: LN, capture: Capture, filename: Filename) -> bool:
+    def is_call(self):
+        def filter_is_call(node, capture, filename):
             return bool("function_call" in capture or "class_call" in capture)
 
         self.current.filters.append(filter_is_call)
         return self
 
-    def is_def(self) -> "Query":
-        def filter_is_def(node: LN, capture: Capture, filename: Filename) -> bool:
+    def is_def(self):
+        def filter_is_def(node, capture, filename):
             return bool("function_def" in capture or "class_def" in capture)
 
         self.current.filters.append(filter_is_def)
         return self
 
-    def in_class(self, class_name: str, include_subclasses: bool = True) -> "Query":
-        def filter_in_class(node: LN, capture: Capture, filename: Filename) -> bool:
+    def in_class(self, class_name, include_subclasses = True):
+        def filter_in_class(node, capture, filename):
             while node.parent is not None:
                 if node.type == SYMBOL.classdef:
                     if node.children[1].value == class_name:
@@ -465,7 +465,7 @@ class Query:
         self.current.filters.append(filter_in_class)
         return self
 
-    def encapsulate(self, internal_name: str = "") -> "Query":
+    def encapsulate(self, internal_name = ""):
         transform = self.current
         if transform.selector not in ("attribute"):
             raise ValueError("encapsulate requires select_attribute")
@@ -484,8 +484,8 @@ class Query:
             )
 
         def encapsulate_transform(
-            node: LN, capture: Capture, filename: Filename
-        ) -> None:
+            node, capture, filename
+        ):
             if "attr_assignment" in capture:
                 leaf = capture["attr_name"]
                 leaf.replace(Name(new_name, prefix=leaf.prefix))
@@ -640,15 +640,15 @@ class Query:
         transform.callbacks.append(encapsulate_transform)
         return self
 
-    def rename(self, new_name: str) -> "Query":
+    def rename(self, new_name):
         transform = self.current
         old_name = transform.kwargs["name"]
 
-        def rename_transform(node: LN, capture: Capture, filename: Filename) -> None:
+        def rename_transform(node, capture, filename):
             log.debug(f"{filename} [{list(capture)}]: {node}")
 
             # If two keys reference the same underlying object, do not modify it twice
-            visited: List[LN] = []
+            visited = []
             for _key, value in capture.items():
                 log.debug(f"{_key}: {value}")
                 if value in visited:
@@ -709,12 +709,12 @@ class Query:
 
     def add_argument(
         self,
-        name: str,
-        value: str,
-        positional: bool = False,
-        after: Stringish = SENTINEL,
-        type_annotation: Stringish = SENTINEL,
-    ) -> "Query":
+        name,
+        value,
+        positional = False,
+        after = SENTINEL,
+        type_annotation = SENTINEL,
+    ):
         keyword = not positional
 
         transform = self.current
@@ -738,8 +738,8 @@ class Query:
                 stop_at -= 1
 
         def add_argument_transform(
-            node: Node, capture: Capture, filename: Filename
-        ) -> None:
+            node, capture, filename
+        ):
             if "function_def" not in capture and "function_call" not in capture:
                 return
 
@@ -799,18 +799,18 @@ class Query:
 
     def modify_argument(
         self,
-        name: str,
-        new_name: Stringish = SENTINEL,
-        type_annotation: Stringish = SENTINEL,
-        default_value: Stringish = SENTINEL,
-    ) -> "Query":
+        name,
+        new_name = SENTINEL,
+        type_annotation = SENTINEL,
+        default_value = SENTINEL,
+    ):
         transform = self.current
         if transform.selector not in ("function", "method"):
             raise ValueError(f"modifier must follow select_function or select_method")
 
         def modify_argument_transform(
-            node: Node, capture: Capture, filename: Filename
-        ) -> None:
+            node, capture, filename
+        ):
             if "function_def" not in capture and "function_call" not in capture:
                 return
 
@@ -830,7 +830,7 @@ class Query:
         transform.callbacks.append(modify_argument_transform)
         return self
 
-    def remove_argument(self, name: str) -> "Query":
+    def remove_argument(self, name):
         transform = self.current
         if transform.selector not in ("function", "method"):
             raise ValueError(f"modifier must follow select_function or select_method")
@@ -859,8 +859,8 @@ class Query:
             stop_at -= 1
 
         def remove_argument_transform(
-            node: Node, capture: Capture, filename: Filename
-        ) -> None:
+            node, capture, filename
+        ):
             if "function_def" not in capture and "function_call" not in capture:
                 return
 
@@ -887,33 +887,33 @@ class Query:
         transform.callbacks.append(remove_argument_transform)
         return self
 
-    def fixer(self, fx: Type[BaseFix]) -> "Query":
+    def fixer(self, fx):
         self.transforms.append(Transform(fixer=fx))
         return self
 
-    def filter(self, callback: Union[str, Callback]) -> "Query":
+    def filter(self, callback):
         if isinstance(callback, str):
             code = compile(callback, "<string>", "eval")
 
-            def callback(node: Node, capture: Capture, filename: Filename) -> bool:
+            def callback(node, capture, filename):
                 return bool(eval(code))  # noqa: developer tool
 
         callback = cast(Callback, callback)
         self.current.filters.append(callback)
         return self
 
-    def modify(self, callback: Union[str, Callback]) -> "Query":
+    def modify(self, callback):
         if isinstance(callback, str):
             code = compile(callback, "<string>", "exec")
 
-            def callback(node: Node, capture: Capture, filename: Filename) -> None:
+            def callback(node, capture, filename):
                 exec(code)
 
         callback = cast(Callback, callback)
         self.current.callbacks.append(callback)
         return self
 
-    def process(self, callback: Processor) -> "Query":
+    def process(self, callback):
         self.processors.append(callback)
         return self
 
@@ -946,7 +946,7 @@ class Query:
             PATTERN = pattern  # type: ignore
             BM_compatible = bm_compat
 
-            def transform(self, node: LN, capture: Capture) -> Optional[LN]:
+            def transform(self, node, capture):
                 filename = cast(Filename, self.filename)
                 returned_node = None
                 if not filters or all(f(node, capture, filename) for f in filters):
@@ -964,22 +964,22 @@ class Query:
 
         return Fixer
 
-    def compile(self) -> List[Type[BaseFix]]:
+    def compile(self):
         if not self.transforms:
             log.debug(f"no selectors chosen, defaulting to select_root")
             self.select_root()
 
-        fixers: List[Type[BaseFix]] = []
+        fixers = []
         for transform in self.transforms:
             fixers.append(self.create_fixer(transform))
 
         return fixers
 
-    def execute(self, **kwargs) -> "Query":
+    def execute(self, **kwargs):
         fixers = self.compile()
         if self.processors:
 
-            def processor(filename: Filename, hunk: Hunk) -> bool:
+            def processor(filename, hunk):
                 apply = True
                 for p in self.processors:
                     if p(filename, hunk) is False:
@@ -994,7 +994,7 @@ class Query:
         self.exceptions = tool.exceptions
         return self
 
-    def dump(self, selector_pattern=False) -> "Query":
+    def dump(self, selector_pattern=False):
         if not selector_pattern:
             for transform in self.transforms:
                 transform.callbacks.append(print_tree)
@@ -1003,14 +1003,14 @@ class Query:
                 transform.callbacks.append(print_selector_pattern)
         return self.execute(write=False)
 
-    def diff(self, interactive: bool = False, **kwargs) -> "Query":
+    def diff(self, interactive = False, **kwargs):
         return self.execute(write=False, interactive=interactive, **kwargs)
 
-    def idiff(self, **kwargs) -> "Query":
+    def idiff(self, **kwargs):
         return self.diff(interactive=True, **kwargs)
 
-    def silent(self, **kwargs) -> "Query":
+    def silent(self, **kwargs):
         return self.execute(silent=True, **kwargs)
 
-    def write(self, **kwargs) -> "Query":
+    def write(self, **kwargs):
         return self.execute(write=True, **kwargs)

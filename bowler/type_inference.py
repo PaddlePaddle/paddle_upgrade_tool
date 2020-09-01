@@ -79,10 +79,10 @@ OP_MIN_TYPE: Dict = {
 
 
 def numeric_expr_type(
-    node: LN,
+    node,
     use_py2_division=False,
-    type_for_unknown: InferredType = InferredType.UNKNOWN,
-) -> "InferredType":
+    type_for_unknown = InferredType.UNKNOWN,
+):
     """Infer the type of an expression from its literals.
 
     We broaden the definition of "literal" a bit to also include calls to
