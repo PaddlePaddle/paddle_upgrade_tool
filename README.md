@@ -79,6 +79,8 @@ if you want to run all unittest, use command:
 
 ```bash
 python -m unittest discover paddle1to2/tests/
+# or
+python setup.py test
 ```
 or use command:
 
