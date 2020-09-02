@@ -20,7 +20,7 @@ INDENT_STR = ".  "
 
 
 def print_selector_pattern(
-    node: LN, results: Capture = None, filename: Filename = None
+    node, results = None, filename = None
 ):
     key = ""
     if results:
@@ -31,9 +31,9 @@ def print_selector_pattern(
                 key = k + "="
 
     if isinstance(node, Leaf):
-        click.echo(f"{key}{repr(node.value)} ", nl=False)
+        click.echo("{}{} ".format(key, repr(node.value)), nl=False)
     else:
-        click.echo(f"{key}{type_repr(node.type)} ", nl=False)
+        click.echo("{}{} ".format(key, type_repr(node.type)), nl=False)
         if node.children:
             click.echo("< ", nl=False)
             for child in node.children:
@@ -42,11 +42,11 @@ def print_selector_pattern(
 
 
 def print_tree(
-    node: LN,
-    results: Capture = None,
-    filename: Filename = None,
-    indent: int = 0,
-    recurse: int = -1,
+    node,
+    results = None,
+    filename = None,
+    indent = 0,
+    recurse = -1,
 ):
     filename = filename or Filename("")
     tab = INDENT_STR * indent
@@ -57,14 +57,14 @@ def print_tree(
         click.echo(
             click.style(tab, fg="black", bold=True)
             + click.style(
-                f"[{tok_name[node.type]}] {repr(node.prefix)} {repr(node.value)}",
+                "[{}] {} {}".format(tok_name[node.type], repr(node.prefix), repr(node.value)),
                 fg="yellow",
             )
         )
     else:
         click.echo(
             click.style(tab, fg="black", bold=True)
-            + click.style(f"[{type_repr(node.type)}] {repr(node.prefix)}", fg="blue")
+            + click.style("[{}] {}".format(type_repr(node.type), repr(node.prefix)), fg="blue")
         )
 
     if node.children:
@@ -85,15 +85,15 @@ def print_tree(
 
         value = results[key]
         if isinstance(value, (Leaf, Node)):
-            click.secho(f"results[{repr(key)}] =", fg="red")
+            click.secho("results[{}] =".format(repr(key)), fg="red")
             print_tree(value, indent=1, recurse=1)
         else:
             # TODO: Improve display of multi-match here, see
             # test_print_tree_captures test.
-            click.secho(f"results[{repr(key)}] = {value}", fg="red")
+            click.secho("results[{}] = {}".format(repr(key), value), fg="red")
 
 
-def dotted_parts(name: str) -> List[str]:
+def dotted_parts(name):
     pre, dot, post = name.partition(".")
     if post:
         post_parts = dotted_parts(post)
@@ -109,11 +109,11 @@ def dotted_parts(name: str) -> List[str]:
     return result
 
 
-def quoted_parts(name: str) -> List[str]:
-    return [f"'{part}'" for part in dotted_parts(name)]
+def quoted_parts(name):
+    return ["'{}'".format(part) for part in dotted_parts(name)]
 
 
-def power_parts(name: str) -> List[str]:
+def power_parts(name):
     parts = quoted_parts(name)
     index = 0
     while index < len(parts):
@@ -125,7 +125,7 @@ def power_parts(name: str) -> List[str]:
     return parts
 
 
-def is_method(node: LN) -> bool:
+def is_method(node):
     return (
         node.type == SYMBOL.funcdef
         and node.parent is not None
@@ -135,7 +135,7 @@ def is_method(node: LN) -> bool:
     )
 
 
-def is_call_to(node: LN, func_name: str) -> bool:
+def is_call_to(node, func_name):
     """Returns whether the node represents a call to the named function."""
     return (
         node.type == SYMBOL.power
@@ -144,8 +144,8 @@ def is_call_to(node: LN, func_name: str) -> bool:
     )
 
 
-def find_first(node: LN, target: int, recursive: bool = False) -> Optional[LN]:
-    queue: List[LN] = [node]
+def find_first(node, target, recursive = False):
+    queue = [node]
     queue.extend(node.children)
     while queue:
         child = queue.pop(0)
@@ -156,7 +156,7 @@ def find_first(node: LN, target: int, recursive: bool = False) -> Optional[LN]:
     return None
 
 
-def find_previous(node: LN, target: int, recursive: bool = False) -> Optional[LN]:
+def find_previous(node, target, recursive = False):
     while node.prev_sibling is not None:
         node = node.prev_sibling
         result = find_last(node, target, recursive)
@@ -165,7 +165,7 @@ def find_previous(node: LN, target: int, recursive: bool = False) -> Optional[LN
     return None
 
 
-def find_next(node: LN, target: int, recursive: bool = False) -> Optional[LN]:
+def find_next(node, target, recursive = False):
     while node.next_sibling is not None:
         node = node.next_sibling
         result = find_first(node, target, recursive)
@@ -174,8 +174,8 @@ def find_next(node: LN, target: int, recursive: bool = False) -> Optional[LN]:
     return None
 
 
-def find_last(node: LN, target: int, recursive: bool = False) -> Optional[LN]:
-    queue: List[LN] = []
+def find_last(node, target, recursive = False):
+    queue = []
     queue.extend(reversed(node.children))
     while queue:
         child = queue.pop(0)
@@ -188,21 +188,21 @@ def find_last(node: LN, target: int, recursive: bool = False) -> Optional[LN]:
     return None
 
 
-def get_class(node: LN) -> LN:
+def get_class(node):
     while node.parent is not None:
         if node.type == SYMBOL.classdef:
             return node
         node = node.parent
-    raise ValueError(f"classdef node not found")
+    raise ValueError("classdef node not found")
 
 
 class Once:
     """Simple object that evaluates to True once, and then always False."""
 
-    def __init__(self) -> None:
+    def __init__(self):
         self.done = False
 
-    def __bool__(self) -> bool:
+    def __bool__(self):
         if self.done:
             return False
         else:
@@ -210,11 +210,11 @@ class Once:
             return True
 
 
-def filename_endswith(ext: Union[Sequence, str]) -> FilenameMatcher:
+def filename_endswith(ext):
     if isinstance(ext, str):
         ext = [ext]
 
-    def inner(filename: Filename) -> bool:
+    def inner(filename):
         return any(filename.endswith(e) for e in ext)
 
     return inner

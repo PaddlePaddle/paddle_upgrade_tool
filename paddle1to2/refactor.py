@@ -135,7 +135,7 @@ def refactor_import(q: Query, change_spec) -> "Query":
             return
         if filename not in imports_map:
             return
-        logger.debug(f"{filename} [{list(capture)}]: {node}")
+        logger.debug("{} [{}]: {}".format(filename, list(capture), node))
 
         # skip import statement
         p = node.parent

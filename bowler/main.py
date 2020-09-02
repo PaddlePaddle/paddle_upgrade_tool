@@ -22,7 +22,7 @@ from .types import START, SYMBOL, TOKEN
 @click.option("--debug/--quiet", default=False, help="Logging output level")
 @click.option("--version", "-V", is_flag=True, help="Print version string and exit")
 @click.pass_context
-def main(ctx: click.Context, debug: bool, version: bool) -> None:
+def main(ctx, debug, version):
     """Safe Python code modification and refactoring."""
     if version:
         from bowler import __version__
@@ -55,7 +55,7 @@ def main(ctx: click.Context, debug: bool, version: bool) -> None:
 @main.command()
 @click.option("--selector-pattern", is_flag=True)
 @click.argument("paths", type=click.Path(exists=True), nargs=-1, required=False)
-def dump(selector_pattern: bool, paths: List[str]) -> None:
+def dump(selector_pattern, paths: List[str]):
     """Dump the CST representation of each file in <paths>."""
     return Query(paths).select_root().dump(selector_pattern).retcode
 
@@ -64,7 +64,7 @@ def dump(selector_pattern: bool, paths: List[str]) -> None:
 @click.option("-i", "--interactive", is_flag=True)
 @click.argument("query", required=False)
 @click.argument("paths", type=click.Path(exists=True), nargs=-1, required=False)
-def do(interactive: bool, query: str, paths: List[str]) -> None:
+def do(interactive, query, paths):
     """Execute a query or enter interactive mode."""
     if not query or query == "-":
 
@@ -99,7 +99,7 @@ def do(interactive: bool, query: str, paths: List[str]) -> None:
 @main.command()
 @click.argument("codemod", required=True, type=str)
 @click.argument("argv", required=False, type=str, nargs=-1)
-def run(codemod: str, argv: List[str]) -> None:
+def run(codemod, argv):
     """
     Execute a file-based code modification.
 

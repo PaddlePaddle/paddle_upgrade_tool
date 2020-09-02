@@ -44,13 +44,13 @@ PROMPT_HELP = {
 log = logging.getLogger(__name__)
 
 
-def diff_texts(a: str, b: str, filename: str) -> Iterator[str]:
+def diff_texts(a, b, filename):
     lines_a = a.splitlines()
     lines_b = b.splitlines()
     return difflib.unified_diff(lines_a, lines_b, filename, filename, lineterm="")
 
 
-def prompt_user(question: str, options: str, default: str = "") -> str:
+def prompt_user(question, options, default = ""):
     options = options.lower()
     default = default.lower()
     assert len(default) < 2 and default in options
@@ -59,20 +59,20 @@ def prompt_user(question: str, options: str, default: str = "") -> str:
         options += "?"
 
     prompt_options = ",".join(o.upper() if o == default else o for o in options)
-    prompt = f"{question} [{prompt_options}]? "
+    prompt = "{} [{}]? ".format(question, prompt_options)
     result = ""
 
     while True:
         result = input(prompt).strip().lower()
         if result == "?":
             for option in PROMPT_HELP:
-                click.secho(f"{option} - {PROMPT_HELP[option]}", fg="red", bold=True)
+                click.secho("{} - {}".format(option, PROMPT_HELP[option]), fg="red", bold=True)
 
         elif len(result) == 1 and result in options:
             return result
 
         elif result:
-            click.echo(f'invalid response "{result}"')
+            click.echo('invalid response "{}"'.format(result))
 
         elif default:
             return default
@@ -84,16 +84,15 @@ class BowlerTool(RefactoringTool):
 
     def __init__(
         self,
-        fixers: Fixers,
+        fixers,
         *args,
-        interactive: bool = True,
-        write: bool = False,
-        silent: bool = False,
-        in_process: bool = False,
-        hunk_processor: Processor = None,
-        filename_matcher: Optional[FilenameMatcher] = None,
-        **kwargs,
-    ) -> None:
+        interactive = True,
+        write = False,
+        silent = False,
+        in_process = False,
+        hunk_processor = None,
+        filename_matcher = None,
+        **kwargs):
         options = kwargs.pop("options", {})
         options["print_function"] = True
         super().__init__(fixers, *args, options=options, **kwargs)
@@ -106,31 +105,31 @@ class BowlerTool(RefactoringTool):
         self.silent = silent
         # pick the most restrictive of flags
         self.in_process = in_process or self.IN_PROCESS
-        self.exceptions: List[BowlerException] = []
+        self.exceptions = []
         if hunk_processor is not None:
             self.hunk_processor = hunk_processor
         else:
             self.hunk_processor = lambda f, h: True
         self.filename_matcher = filename_matcher or filename_endswith(".py")
 
-    def log_error(self, msg: str, *args: Any, **kwds: Any) -> None:
+    def log_error(self, msg, *args, **kwds):
         self.logger.error(msg, *args, **kwds)
 
-    def get_fixers(self) -> Tuple[Fixers, Fixers]:
+    def get_fixers(self):
         fixers = [f(self.options, self.fixer_log) for f in self.fixers]
-        pre: Fixers = [f for f in fixers if f.order == "pre"]
-        post: Fixers = [f for f in fixers if f.order == "post"]
+        pre = [f for f in fixers if f.order == "pre"]
+        post = [f for f in fixers if f.order == "post"]
         return pre, post
 
     def processed_file(
-        self, new_text: str, filename: str, old_text: str = "", *args, **kwargs
-    ) -> List[Hunk]:
+        self, new_text, filename, old_text = "", *args, **kwargs
+    ):
         self.files.append(filename)
-        hunks: List[Hunk] = []
+        hunks = []
         if old_text != new_text:
             a, b, *lines = list(diff_texts(old_text, new_text, filename))
 
-            hunk: Hunk = []
+            hunk = []
             for line in lines:
                 if line.startswith("@@"):
                     if hunk:
@@ -147,22 +146,22 @@ class BowlerTool(RefactoringTool):
                     raise AssertionError("Re-parsed CST is None")
             except Exception as e:
                 raise BadTransform(
-                    f"Transforms generated invalid CST for {filename}",
+                    "Transforms generated invalid CST for {}".format(filename),
                     filename=filename,
                     hunks=hunks,
                 ) from e
 
         return hunks
 
-    def refactor_file(self, filename: str, *a, **k) -> List[Hunk]:
+    def refactor_file(self, filename, *a, **k):
         try:
-            hunks: List[Hunk] = []
+            hunks = []
             input, encoding = self._read_python_source(filename)
             if input is None:
                 # Reading the file failed.
                 return hunks
         except (OSError, UnicodeDecodeError) as e:
-            log.error(f"Skipping {filename}: failed to read because {e}")
+            log.error("Skipping {}: failed to read because {}".format(filename, e))
             return hunks
 
         try:
@@ -176,7 +175,7 @@ class BowlerTool(RefactoringTool):
 
         return hunks
 
-    def refactor_dir(self, dir_name: str, *a, **k) -> None:
+    def refactor_dir(self, dir_name, *a, **k):
         """Descends down a directory and refactor every Python file found.
 
         Python files are those for which `self.filename_matcher(filename)`
@@ -197,7 +196,7 @@ class BowlerTool(RefactoringTool):
             # Modify dirnames in-place to remove subdirs with leading dots
             dirnames[:] = [dn for dn in dirnames if not dn.startswith(".")]
 
-    def refactor_queue(self) -> None:
+    def refactor_queue(self):
         self.semaphore.acquire()
         while True:
             filename = self.queue.get()
@@ -210,24 +209,24 @@ class BowlerTool(RefactoringTool):
                 self.results.put((filename, hunks, None))
 
             except RetryFile:
-                self.log_debug(f"Retrying {filename} later...")
+                self.log_debug("Retrying {} later...".format(filename))
                 self.queue.put(filename)
             except BowlerException as e:
-                log.exception(f"Bowler exception during transform of {filename}: {e}")
+                log.exception("Bowler exception during transform of {}: {}".format(filename, e))
                 self.results.put((filename, e.hunks, e))
             except Exception as e:
-                log.exception(f"Skipping {filename}: failed to transform because {e}")
+                log.exception("Skipping {}: failed to transform because {}".format(filename, e))
                 self.results.put((filename, [], e))
 
             finally:
                 self.queue.task_done()
         self.semaphore.release()
 
-    def queue_work(self, filename: Filename) -> None:
+    def queue_work(self, filename):
         self.queue.put(filename)
         self.queue_count += 1
 
-    def refactor(self, items: Sequence[str], *a, **k) -> None:
+    def refactor(self, items, *a, **k):
         """Refactor a list of files and directories."""
 
         for dir_or_file in sorted(items):
@@ -236,13 +235,13 @@ class BowlerTool(RefactoringTool):
             else:
                 self.queue_work(Filename(dir_or_file))
 
-        children: List[multiprocessing.Process] = []
+        children = []
         if self.in_process:
             self.queue.put(None)
             self.refactor_queue()
         else:
             child_count = max(1, min(self.NUM_PROCESSES, self.queue_count))
-            self.log_debug(f"starting {child_count} processes")
+            self.log_debug("starting {} processes".format(child_count))
             for i in range(child_count):
                 child = multiprocessing.Process(target=self.refactor_queue)
                 child.start()
@@ -257,17 +256,17 @@ class BowlerTool(RefactoringTool):
                 results_count += 1
 
                 if exc:
-                    self.log_error(f"{type(exc).__name__}: {exc}")
+                    self.log_error("{}: {}".format(type(exc).__name__, exc))
                     if exc.__cause__:
                         self.log_error(
-                            f"  {type(exc.__cause__).__name__}: {exc.__cause__}"
+                            "  {}: {}".format(type(exc.__cause__).__name__, exc.__cause__)
                         )
                     if isinstance(exc, BowlerException) and exc.hunks:
                         diff = "\n".join("\n".join(hunk) for hunk in exc.hunks)
-                        self.log_error(f"Generated transform:\n{diff}")
+                        self.log_error("Generated transform:\n{}".format(diff))
                     self.exceptions.append(exc)
                 else:
-                    self.log_debug(f"results: got {len(hunks)} hunks for {filename}")
+                    self.log_debug("results: got {} hunks for {}".format(len(hunks), filename))
                     self.process_hunks(filename, hunks)
 
             except Empty:
@@ -277,7 +276,7 @@ class BowlerTool(RefactoringTool):
                 elif not self.in_process and not any(
                     child.is_alive() for child in children
                 ):
-                    self.log_debug(f"child processes stopped without consuming work")
+                    self.log_debug("child processes stopped without consuming work")
                     break
 
                 else:
@@ -288,9 +287,9 @@ class BowlerTool(RefactoringTool):
                     child.terminate()
                 break
 
-        self.log_debug(f"all children stopped and all diff hunks processed")
+        self.log_debug("all children stopped and all diff hunks processed")
 
-    def process_hunks(self, filename: Filename, hunks: List[Hunk]) -> None:
+    def process_hunks(self, filename, hunks):
         auto_yes = False
         result = ""
         accepted_hunks = ""
@@ -323,12 +322,12 @@ class BowlerTool(RefactoringTool):
 
                 if self.interactive:
                     if auto_yes:
-                        click.echo(f"Applying remaining hunks to {filename}")
+                        click.echo("Applying remaining hunks to {}".format(filename))
                         result = "y"
                     else:
                         result = prompt_user("Apply this hunk", "ynqad", "n")
 
-                    self.log_debug(f"result = {result}")
+                    self.log_debug("result = {}".format(result))
 
                     if result == "q":
                         self.apply_hunks(accepted_hunks, filename)
@@ -351,9 +350,9 @@ class BowlerTool(RefactoringTool):
 
     def apply_hunks(self, accepted_hunks, filename):
         if accepted_hunks:
-            accepted_hunks = f"--- {filename}\n+++ {filename}\n{accepted_hunks}"
+            accepted_hunks = "--- {}\n+++ {}\n{}".format(filename, filename, accepted_hunks)
             args = ["patch", "-u", filename]
-            self.log_debug(f"running {args}")
+            self.log_debug("running {}".format(args))
             try:
                 sh.patch(*args[1:], _in=accepted_hunks.encode("utf-8"))  # type: ignore
             except sh.ErrorReturnCode as e:
@@ -363,11 +362,11 @@ class BowlerTool(RefactoringTool):
                     err = e.stdout.strip().decode("utf-8")
                     if "saving rejects to file" in err:
                         err = err.split("saving rejects to file")[1]
-                        log.exception(f"hunks failed to apply, rejects saved to{err}")
+                        log.exception("hunks failed to apply, rejects saved to{}".format(err))
                         return
-                log.exception(f"failed to apply patch hunk: {err}")
+                log.exception("failed to apply patch hunk: {}".format(err))
 
-    def run(self, paths: Sequence[str]) -> int:
+    def run(self, paths):
         if not self.errors:
             self.refactor(paths)
             self.summarize()

@@ -17,6 +17,7 @@ setup(
     url='https://github.com/T8T9/paddle1to2',
     packages = find_packages(),
     package_data={'fissix': ['*.txt']},
+    test_suite="paddle1to2.tests",
     description='Upgrade python project from paddle-1.x to paddle-2.0',
     long_description=LONG_DESCRIPTION,
     long_description_content_type="text/markdown",
@@ -35,6 +36,10 @@ setup(
     classifiers=(
         "License :: OSI Approved",
         "Programming Language :: Python :: 3",
+        "Programming Language :: Python :: 3.5",
+        "Programming Language :: Python :: 3.6",
+        "Programming Language :: Python :: 3.7",
+        "Programming Language :: Python :: 3.8",
         "Operating System :: OS Independent",
     ),
 )
