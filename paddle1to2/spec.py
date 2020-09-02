@@ -1116,6 +1116,7 @@ change_spec = {
     # },
     # manual check
     "paddle.fluid.layers.topk": {
+        "update_to": "paddle.topk",
         "args_list": [
             "input",
             "k",
@@ -1229,6 +1230,7 @@ change_spec = {
     },
     # manual check
     "paddle.fluid.layers.unsqueeze": {
+        "update_to": "paddle.unsqueeze",
         "args_list": [
             "input",
             "axes",
@@ -2483,6 +2485,7 @@ change_spec = {
     },
     # manual check
     "paddle.fluid.layers.zeros": {
+        "update_to": "paddle.zeros",
         "args_list": [
             "shape",
             "dtype",
@@ -3772,14 +3775,114 @@ change_spec = {
     "paddle.fluid.dygraph.LayerList": {
         "update_to": "paddle.nn.LayerList"
     },
-    # TODO paddle.nn.Conv2d
-    # "paddle.fluid.dygraph.Conv2D": {
-    #     "update_to": "paddle.fluid.dygraph.Conv2D"
-    # },
-    # TODO paddle.nn.Conv3d
-    # "paddle.fluid.dygraph.Conv3D": {
-    #     "update_to": "paddle.fluid.dygraph.Conv3D"
-    # },
+    # TODO act transformer manual check
+    "paddle.fluid.dygraph.Conv2D": {
+        "alias": ["paddle.fluid.dygraph.nn.Conv2D"],
+        "update_to": "paddle.nn.Conv2d",
+        "args_list": [
+            "num_channels",
+            "num_filters",
+            "filter_size",
+            "stride",
+            "padding",
+            "dilation",
+            "groups",
+            "param_attr",
+            "bias_attr",
+            "use_cudnn",
+            "act",
+            "dtype"
+        ],
+        "args_change": [
+            [
+                "num_channels",
+                "in_channels"
+            ],
+            [
+                "num_filters",
+                "out_channels"
+            ],
+            [
+                "filter_size",
+                "kernel_size"
+            ],
+            [
+                "param_attr",
+                "weight_attr"
+            ],
+            [
+                "use_cudnn",
+                ""
+            ],
+            [
+                "act",
+                ""
+            ],
+            [
+                "dtype",
+                ""
+            ]
+        ],
+        "args_warning": {
+            "use_cudnn": "this args is deleted in paddle.nn.Conv2d",
+            "act": "this args is deleted in paddle.nn.Conv2d",
+            "dtype": "this args is deleted in paddle.nn.Conv2d"
+        }
+    },
+    # TODO act transformer manual check
+    "paddle.fluid.dygraph.Conv3D": {
+        "alias": ["paddle.fluid.dygraph.nn.Conv3D"],
+        "update_to": "paddle.nn.Conv3d",
+        "args_list": [
+            "num_channels",
+            "num_filters",
+            "filter_size",
+            "stride",
+            "padding",
+            "dilation",
+            "groups",
+            "param_attr",
+            "bias_attr",
+            "use_cudnn",
+            "act",
+            "dtype"
+        ],
+        "args_change": [
+            [
+                "num_channels",
+                "in_channels"
+            ],
+            [
+                "num_filters",
+                "out_channels"
+            ],
+            [
+                "filter_size",
+                "kernel_size"
+            ],
+            [
+                "param_attr",
+                "weight_attr"
+            ],
+            [
+                "use_cudnn",
+                ""
+            ],
+            [
+                "act",
+                ""
+            ],
+            [
+                "dtype",
+                ""
+            ]
+        ],
+        "args_warning": {
+            "use_cudnn": "this args is deleted in paddle.nn.Conv3d",
+            "act": "this args is deleted in paddle.nn.Conv3d",
+            "dtype": "this args is deleted in paddle.nn.Conv3d"
+        }
+    },
     # manual check
     "paddle.fluid.dygraph.Pool2D": {
         "update_to": "paddle.nn.Pool2D",
@@ -3835,7 +3938,41 @@ change_spec = {
     },
     "paddle.fluid.dygraph.Linear": {
         "alias": ["paddle.fluid.dygraph.nn.Linear"],
-        "update_to": "paddle.nn.Linear"
+        "update_to": "paddle.nn.Linear",
+        "args_list": [
+            "input_dim",
+            "output_dim",
+            "param_attr",
+            "bias_attr",
+            "act",
+            "dtype"
+        ],
+        "args_change": [
+            [
+                "input_dim",
+                "in_features"
+            ],
+            [
+                "output_dim",
+                "out_features"
+            ],
+            [
+                "param_attr",
+                "weight_attr"
+            ],
+            [
+                "act",
+                ""
+            ],
+            [
+                "dtype",
+                ""
+            ]
+        ],
+        "args_warning": {
+            "act": "this args is deleted in paddle.nn.Linear",
+            "dtype": "this args is deleted in paddle.nn.Linear"
+        }
     },
     "paddle.fluid.dygraph.BatchNorm": {
         "alias": ["paddle.fluid.dygraph.nn.BatchNorm"],
