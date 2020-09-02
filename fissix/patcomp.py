@@ -45,7 +45,7 @@ class PatternCompiler(object):
             self.grammar = pygram.pattern_grammar
             self.syms = pygram.pattern_symbols
         else:
-            self.grammar = driver.load_grammar(grammar_file)
+            self.grammar = driver.load_grammar(grammar_file, save=False, force=True)
             self.syms = pygram.Symbols(self.grammar)
         self.pygrammar = pygram.python_grammar
         self.pysyms = pygram.python_symbols

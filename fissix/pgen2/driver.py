@@ -150,7 +150,7 @@ def load_packaged_grammar(package, grammar_source):
 
     """
     if os.path.isfile(grammar_source):
-        return load_grammar(grammar_source)
+        return load_grammar(grammar_source, save=False, force=True)
     pickled_name = _generate_pickle_name(os.path.basename(grammar_source))
     data = pkgutil.get_data(package, pickled_name)
     g = grammar.Grammar()
@@ -167,7 +167,7 @@ def main(*args):
         args = sys.argv[1:]
     logging.basicConfig(level=logging.INFO, stream=sys.stdout, format="%(message)s")
     for gt in args:
-        load_grammar(gt, save=True, force=True)
+        load_grammar(gt, save=False, force=True)
     return True
 
 

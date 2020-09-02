@@ -1,4 +1,3 @@
 attrs
 click
 sh
-appdirs
