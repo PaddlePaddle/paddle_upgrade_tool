@@ -1,4 +1,5 @@
 import os
+import sys
 import shutil
 from io import StringIO
 from datetime import datetime
@@ -144,4 +145,50 @@ def dec_indent(indent, count=1):
     elif indent.endswith('    '):
         indent = indent[:len(indent) - 4 * count]
     return indent
+
+def _is_windows():
+    """
+    check if current operating system is windows
+    """
+    return sys.platform.lower() == 'win32'
+
+def _is_windows_file(filepath):
+    """
+    if file contains "\r\n", treat it as windows file, and return True, else False
+    """
+    with open(filepath, 'rb') as f:
+        content = f.read()
+    if content.find(b'\r\n') != -1:
+        return True
+    return False
+
+def valid_path(inpath):
+    # check if args.inpath is valid
+    if not os.path.exists(inpath):
+        logger.error("{} doesn't exist.".format(inpath))
+        return False
+    if os.path.isfile(inpath):
+        """
+        refactor windows files on linux or mac os is not supported.
+        """
+        if not _is_windows() and _is_windows_file(inpath):
+            logger.error('{} is a windows file, you can use "dos2unix" command to convert it to linux file.'.format(inpath))
+            return False
+    elif os.path.isdir(inpath):
+        valid = True
+        for dirpath, dirnames, filenames in os.walk(inpath):
+            for filename in filenames:
+                if not filename.endswith('.py'):
+                    continue
+                filepath = os.path.join(dirpath, filename)
+                if not _is_windows() and _is_windows_file(filepath):
+                    logger.error('{} is a windows file, you can use "dos2unix" command to convert it to linux file.'.format(filepath))
+                    valid = False
+        if not valid:
+            return False
+    else:
+        logger.error('{} is neither a file nor a directory.'.format(inpath))
+        return False
+
+    return True
 

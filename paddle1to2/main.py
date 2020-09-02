@@ -10,18 +10,18 @@ import click
 from bowler import Query
 
 from paddle1to2.common import *
-from paddle1to2 import refactor, filters
+from paddle1to2 import refactor, filters, utils
 from paddle1to2.refactor import *
 from paddle1to2.spec import change_spec
 from paddle1to2.utils import backup_inpath
 
-def should_convert():
+def should_convert(inpath):
     """
     check if convert should be run.
-    convert should be interrupted in the following cases:
-    1. directory is not a git repo, and there are something not committed.
-    2. file has been converted.
     """
+    # check if inpath exists, and python files in inpath are valid.
+    if not utils.valid_path(inpath):
+        return False
     return True
 
 def main():
@@ -48,13 +48,8 @@ def main():
         logger.setLevel(args.log_level)
     if not args.no_log_file:
         log_to_file(args.log_filepath)
-    if not should_convert():
+    if not should_convert(args.inpath):
         logger.error("convert abort!")
-        sys.exit(1)
-
-    # check if args.inpath is valid
-    if not os.path.exists(args.inpath):
-        logger.error("{} doesn't exist.".format(args.inpath))
         sys.exit(1)
 
     # refactor code via "Query" step by step.
