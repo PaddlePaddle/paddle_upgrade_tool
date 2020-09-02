@@ -162,20 +162,36 @@ def _is_windows_file(filepath):
         return True
     return False
 
+def _is_utf8(filepath):
+    """
+    check if file is utf8 encoding
+    """
+    with open(filepath, 'rb') as f:
+        content = f.read()
+    try:
+        content_utf8 = content.decode('utf-8')
+    except UnicodeDecodeError as e:
+        return False
+    return True
+
 def valid_path(inpath):
-    # check if args.inpath is valid
+    # check if inpath is valid
     if not os.path.exists(inpath):
         logger.error("{} doesn't exist.".format(inpath))
         return False
+    valid = True
     if os.path.isfile(inpath):
         """
         refactor windows files on linux or mac os is not supported.
         """
-        if not _is_windows() and _is_windows_file(inpath):
-            logger.error('{} is a windows file, you can use "dos2unix" command to convert it to linux file.'.format(inpath))
-            return False
+        if not _is_windows():
+            if _is_windows_file(inpath):
+                logger.error('{} is a windows file, you can use "dos2unix" command to convert it to linux file.'.format(inpath))
+                valid = False
+            if not _is_utf8(inpath):
+                logger.error('{} encoding is not utf-8, you can use "iconv" command to convert it to utf-8.'.format(inpath))
+                valid = False
     elif os.path.isdir(inpath):
-        valid = True
         for dirpath, dirnames, filenames in os.walk(inpath):
             for filename in filenames:
                 if not filename.endswith('.py'):
@@ -184,11 +200,12 @@ def valid_path(inpath):
                 if not _is_windows() and _is_windows_file(filepath):
                     logger.error('{} is a windows file, you can use "dos2unix" command to convert it to linux file.'.format(filepath))
                     valid = False
-        if not valid:
-            return False
+                if not _is_utf8(filepath):
+                    logger.error('{} encoding is not utf-8, you can use "iconv" command to convert it to utf-8.'.format(filepath))
+                    valid = False
     else:
         logger.error('{} is neither a file nor a directory.'.format(inpath))
-        return False
+        valid = False
 
-    return True
+    return valid
 
