@@ -31,9 +31,9 @@ def print_selector_pattern(
                 key = k + "="
 
     if isinstance(node, Leaf):
-        click.echo(f"{key}{repr(node.value)} ", nl=False)
+        click.echo("{}{} ".format(key, repr(node.value)), nl=False)
     else:
-        click.echo(f"{key}{type_repr(node.type)} ", nl=False)
+        click.echo("{}{} ".format(key, type_repr(node.type)), nl=False)
         if node.children:
             click.echo("< ", nl=False)
             for child in node.children:
@@ -57,14 +57,14 @@ def print_tree(
         click.echo(
             click.style(tab, fg="black", bold=True)
             + click.style(
-                f"[{tok_name[node.type]}] {repr(node.prefix)} {repr(node.value)}",
+                "[{}] {} {}".format(tok_name[node.type], repr(node.prefix), repr(node.value)),
                 fg="yellow",
             )
         )
     else:
         click.echo(
             click.style(tab, fg="black", bold=True)
-            + click.style(f"[{type_repr(node.type)}] {repr(node.prefix)}", fg="blue")
+            + click.style("[{}] {}".format(type_repr(node.type), repr(node.prefix)), fg="blue")
         )
 
     if node.children:
@@ -85,12 +85,12 @@ def print_tree(
 
         value = results[key]
         if isinstance(value, (Leaf, Node)):
-            click.secho(f"results[{repr(key)}] =", fg="red")
+            click.secho("results[{}] =".format(repr(key)), fg="red")
             print_tree(value, indent=1, recurse=1)
         else:
             # TODO: Improve display of multi-match here, see
             # test_print_tree_captures test.
-            click.secho(f"results[{repr(key)}] = {value}", fg="red")
+            click.secho("results[{}] = {}".format(repr(key), value), fg="red")
 
 
 def dotted_parts(name):
@@ -110,7 +110,7 @@ def dotted_parts(name):
 
 
 def quoted_parts(name):
-    return [f"'{part}'" for part in dotted_parts(name)]
+    return ["'{}'".format(part) for part in dotted_parts(name)]
 
 
 def power_parts(name):
@@ -193,7 +193,7 @@ def get_class(node):
         if node.type == SYMBOL.classdef:
             return node
         node = node.parent
-    raise ValueError(f"classdef node not found")
+    raise ValueError("classdef node not found")
 
 
 class Once:

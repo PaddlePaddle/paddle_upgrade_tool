@@ -88,17 +88,17 @@ class FunctionArgument:
 
         while leaf is not None:
             arg = cls.build(leaf, is_def)
-            log.debug(f"{leaf} -> {arg}")
+            log.debug("{} -> {}".format(leaf, arg))
             result.append(arg)
 
             # consume leafs for this argument
             while leaf is not None and leaf.type not in ARG_END:
-                log.debug(f"consuming {leaf}")
+                log.debug("consuming {}".format(leaf))
                 leaf = leaf.next_sibling
 
             # assume we stopped on a comma or parenthesis
             if leaf:
-                log.debug(f"separator {leaf}")
+                log.debug("separator {}".format(leaf))
                 leaf = leaf.next_sibling
 
         return result
@@ -178,7 +178,7 @@ class FunctionArgument:
                 prefix = " "
 
             result = argument.explode(is_def, prefix=prefix)
-            log.debug(f"{argument} -> {result}")
+            log.debug("{} -> {}".format(argument, result))
             nodes.extend(result)
             index += 1
 
