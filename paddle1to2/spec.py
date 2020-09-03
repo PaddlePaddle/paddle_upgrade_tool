@@ -957,32 +957,25 @@ change_spec = {
     #     ]
     # },
     # TODO transformer paddle.nn.functional.softmax
-    # "paddle.fluid.layers.softmax": {
-    #     "args_list": [
-    #         "input",
-    #         "use_cudnn",
-    #         "name",
-    #         "axis"
-    #     ],
-    #     "args_change": [
-    #         [
-    #             "input",
-    #             "input"
-    #         ],
-    #         [
-    #             "use_cudnn",
-    #             "use_cudnn"
-    #         ],
-    #         [
-    #             "name",
-    #             "name"
-    #         ],
-    #         [
-    #             "axis",
-    #             "axis"
-    #         ]
-    #     ]
-    # },
+    "paddle.fluid.layers.softmax": {
+        "update_to": "paddle.nn.functional.softmax",
+        "args_list": [
+            "input",
+            "use_cudnn",
+            "name",
+            "axis"
+        ],
+        "args_change": [
+            [
+                "input",
+                "x"
+            ],
+            [
+                "use_cudnn",
+                ""
+            ]
+        ]
+    },
     # TODO whether remind users max_pool2d or avg_pool2d
     "paddle.fluid.layers.pool2d": {
         "update_to": "paddle.nn.functional.pool2d"
@@ -4006,6 +3999,7 @@ change_spec = {
     #     ]
     # },
     "paddle.fluid.dygraph.Embedding": {
+        "alias": ["paddle.fluid.dygraph.nn.Embedding"],
         "update_to": "paddle.nn.Embedding"
     },
     # FlUID_WARNING
