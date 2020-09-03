@@ -1,12 +1,13 @@
 from bowler import Query
 from bowler.helpers import power_parts, quoted_parts, dotted_parts
-from bowler.types import LN, Capture, Filename, SYMBOL, TOKEN
+from bowler.types import LN, Capture, Filename
 
 from fissix.pytree import Leaf, Node, type_repr
 from fissix.fixer_util import Attr, Comma, Dot, LParen, Name, Newline, RParen, KeywordArg, Number, ArgList, Newline
 from fissix.fixer_util import is_import, touch_import, find_root
 from fissix.pygram import python_grammar, python_symbols
 from fissix.patcomp import PatternCompiler
+from fissix.pgen2 import token
 
 from paddle1to2.common import logger
 from paddle1to2 import processors, fixers, utils, transformers
@@ -15,7 +16,6 @@ from paddle1to2.utils import log_debug, log_info, log_warning, log_error
 
 # don't change the order if you don't know what you are doing.
 __all__ = [
-    'refactor_demo',
     'refactor_import',
     'norm_api_alias',
     'args_to_kwargs',
@@ -27,7 +27,7 @@ __all__ = [
 
 def refactor_demo(q: Query, change_spec) -> "Query":
     #q.select_function("old_api").is_call().rename("new_api").process(processors.demo_post_processor)
-    q.select_function("old_api").rename("new_api")
+    #q.select_function("old_api").rename("new_api")
 
     #q.fixer(fixers.FixerDemo)
     return q
@@ -112,13 +112,13 @@ def refactor_import(q: Query, change_spec) -> "Query":
                 imports_map[filename] = {}
             if 'module_import' in capture:
                 leaf = capture['module_import']
-                if leaf.type == TOKEN.NAME:
+                if leaf.type == token.NAME:
                     old_name = leaf.value.strip()
                     new_name = str(capture['module_name']).strip() + '.' + old_name
                     imports_map[filename][old_name] = new_name
             if 'module_imports' in capture:
                 for leaf in capture['module_imports']:
-                    if leaf.type == TOKEN.NAME:
+                    if leaf.type == token.NAME:
                         old_name = leaf.value.strip()
                         new_name = str(capture['module_name']).strip() + '.' + old_name
                         imports_map[filename][old_name] = new_name
@@ -131,7 +131,7 @@ def refactor_import(q: Query, change_spec) -> "Query":
     q.select(pattern).filter(_find_imports)
     # convert to full module path
     def _full_module_path(node: LN, capture: Capture, filename: Filename) -> None:
-        if not (isinstance(node, Leaf) and node.type == TOKEN.NAME):
+        if not (isinstance(node, Leaf) and node.type == token.NAME):
             return
         if filename not in imports_map:
             return
@@ -140,11 +140,11 @@ def refactor_import(q: Query, change_spec) -> "Query":
         # skip import statement
         p = node.parent
         while p is not None:
-            if p.type in {SYMBOL.import_name, SYMBOL.import_from}:
+            if p.type in {python_symbols.import_name, python_symbols.import_from}:
                 return
             p = p.parent
         # skip if it's already a full module path
-        if node.prev_sibling is not None and node.prev_sibling.type == TOKEN.DOT:
+        if node.prev_sibling is not None and node.prev_sibling.type == token.DOT:
             return
 
         rename_dict = imports_map[filename]
@@ -157,7 +157,7 @@ def refactor_import(q: Query, change_spec) -> "Query":
                 _node.parent = None
                 new_node = _node
                 new_node.children[0].prefix = node.prefix
-                if node.parent.type == SYMBOL.power:
+                if node.parent.type == python_symbols.power:
                     node.replace(new_node.children)
                 else:
                     node.replace(new_node)
@@ -175,7 +175,7 @@ def refactor_import(q: Query, change_spec) -> "Query":
             _node.remove()
             log_warning(filename, p.get_lineno(), 'remove "{}"'.format(utils.node2code(_node)))
             # delete NEWLINE node after delete as_import or from_import
-            if p and p.children and len(p.children) == 1 and p.children[0].type == TOKEN.NEWLINE:
+            if p and p.children and len(p.children) == 1 and p.children[0].type == token.NEWLINE:
                 p.children[0].remove()
                 # restore comment
                 p.next_sibling.prefix = prefix + p.next_sibling.prefix
@@ -184,7 +184,7 @@ def refactor_import(q: Query, change_spec) -> "Query":
     # add "import paddle" if needed
     def _add_import(node: LN, capture: Capture, filename: Filename) -> None:
         nonlocal paddle_imported, paddle_found
-        if node.type != SYMBOL.file_input:
+        if node.type != python_symbols.file_input:
             return
         if paddle_imported:
             return
@@ -252,64 +252,46 @@ def args_to_kwargs(q:Query, change_spec) -> "Query":
     # find all func call start with paddle
     pattern = """
     (
-        power< name=('paddle' any*) trailer<  '(' arglist=any* ')' > >
+        power< api=('paddle' any*) trailer_node=trailer< '(' any* ')' > >
     )
     """
 
-    def _modify_args_to_kwargs(node, capture, fn):
-        args = capture["arglist"]
-
-        #get paddle func full name
-        func_name = ""
-        for node in capture["name"]:
-            for l in node.leaves():
-                func_name = func_name + l.value
-
-        if func_name not in change_spec or 'args_list' not in change_spec[func_name]:
+    def _modify_args_to_kwargs(node, capture, filename):
+        #get full api, e.g. paddle.fluid.layers.Layer
+        api_name = utils.node2code(capture["api"]).strip()
+        if api_name not in change_spec:
             return
+        trailer_node = capture["trailer_node"]
+        utils.norm_arglist(trailer_node)
+        args_list = change_spec[api_name].get('args_list', None)
 
-        args_list = change_spec[func_name]['args_list']
-        if len(args_list) == 0:
-            return
-
-        if isinstance(args[0], Leaf):
-            if 1 != len(args_list):
-                warning_msg = "argument list length not equal, raw func argument list length is 1, but expected length is {}".format(len(args_list))
-                log_warning(fn, node.get_lineno(), warning_msg)
+        encounter_kwarg = False
+        idx = 0
+        def _add_arg_name(argument_node):
+            nonlocal encounter_kwarg
+            nonlocal idx
+            if args_list is None:
                 return
-
-            args[0].replace(KeywordArg(Name(args_list[0]), args[0].clone()))
-
-        elif isinstance(args[0], Node):
-            if args[0].type == SYMBOL.arglist:
-                if len(args[0].children) != (len(args_list) *2-1):
-                    warning_msg = "argument list length not equal, raw func argument list length is {}, but expected length is {}".format(int((len(args[0].children) +1 )/2), len(args_list))
-                    log_warning(fn, node.get_lineno(), warning_msg)
-                    return
-
-                child = args[0].children
-                index = 0
-                for ln in child:
-                    if ln.type == SYMBOL.argument:
-                        index = index + 1
-                    elif ln.type != TOKEN.COMMA:
-                        ln.replace(KeywordArg(Name(args_list[index]), ln.clone()))
-                        index = index + 1
-            elif args[0].type == SYMBOL.argument:
-                if 1 != len(args_list):
-                    warning_msg = "argument list length not equal, raw func argument list length is 1, but expected length is {}".format(len(args_list))
-                    log_warning(fn, node.get_lineno(), warning_msg)
-                    return
-
-                raw_arg_name = args[0].children[0].value
-                if raw_arg_name != args_list[0]:
-                    warning_msg = "exist function argument name ({}) not equal expected argument name ({})".format(raw_arg_name, args_list[0])
-                    log_warning(fn, node.get_lineno(), warning_msg)
-                    return
-
+            if encounter_kwarg:
+                return
+            if idx >= len(args_list):
+                msg = 'args_list: "{}" is shorter than positional arguments.'.format(args_list)
+                log_error(filename, argument_node.get_lineno(), msg)
+                return
+            if len(argument_node.children) >= 3:
+                encounter_kwarg = True
+                msg = 'args_list: "{}" is longer than positional arguments, redundant argument will be skipped.'.format(args_list)
+                log_warning(filename, argument_node.get_lineno(), msg)
+                return
+            key = args_list[idx]
+            argument_node.insert_child(0, Leaf(token.EQUAL, "="))
+            argument_node.insert_child(0, Name(key))
+            idx += 1
+            msg = 'add argument name "{}" for {}-th argument.'.format(key, idx)
+            log_debug(filename, argument_node.get_lineno(), msg)
+        utils.apply_argument(filename, trailer_node, _add_arg_name)
 
     q.select(pattern).modify(_modify_args_to_kwargs)
-
     return q
 
 def refactor_kwargs(q:Query, change_spec) -> "Query":
@@ -328,164 +310,59 @@ def refactor_kwargs(q:Query, change_spec) -> "Query":
     # find all func call start with paddle
     pattern = """
     (
-        power< name=('paddle' any*) function_parameters=trailer<  '(' any* ')' > >
+        power< api=('paddle' any*) trailer_node=trailer<  '(' any* ')' > >
     )
     """
-    def _get_leaf(arg_val)->Leaf:
-        if arg_val.lstrip('-').replace(".", "").isnumeric():
-            return Leaf(TOKEN.NUMBER, arg_val)
-        else:
-            return Leaf(TOKEN.NAME, arg_val)
-
-    def _refector_args(node: LN, capture: Capture, fn: Filename) -> None:
-        func_para_node = capture["function_parameters"]
-
-        #get paddle func full name
-        func_name = ""
-        for node in capture["name"]:
-            for l in node.leaves():
-                func_name = func_name + l.value
-
-        if func_name not in change_spec:
+    def _refector_args(node: LN, capture: Capture, filename: Filename) -> None:
+        #get full api, e.g. paddle.fluid.layers.Layer
+        api_name = utils.node2code(capture["api"]).strip()
+        if api_name not in change_spec:
             return
-        
-        args_change = change_spec[func_name].get('args_change', [])
+        trailer_node = capture["trailer_node"]
+        utils.norm_arglist(trailer_node)
+        args_change = change_spec[api_name].get('args_change', [])
 
-        for arg_tuple in args_change:
+        for change in args_change:
             # add new keyword argument
-            if len(arg_tuple) == 3:
-                old_arg = arg_tuple[0]
-                new_arg = arg_tuple[1]
-                arg_val = arg_tuple[2]
+            if len(change) == 3:
+                old_arg = change[0].strip()
+                new_arg = change[1].strip()
+                arg_val = change[2].strip()
                 # old_arg is not empty, do nothing
-                if old_arg != "":
+                if old_arg != "" or new_arg == "":
+                    logger.error('add argument error. api: "{}", args_change: "{}", format should be ["", "new_arg", "default_value"]'.format(api_name, change))
                     continue
 
-                arg_node = KeywordArg(Name(new_arg, prefix=" "), _get_leaf(arg_val))
-                # f() -> f(new_arg = arg_val)
-                if func_para_node.children[0].type == TOKEN.LPAR and func_para_node.children[1].type == TOKEN.RPAR:
-                    arg_node = KeywordArg(Name(new_arg), _get_leaf(arg_val))
-                    func_para_node.insert_child(1, arg_node)
-                    log_info(fn, node.get_lineno(), "add keyword argument: {} = {}".format(new_arg, arg_val))
-                    continue
-
-                # f(1) -> f(1, new_arg = arg_val)
-                if isinstance(func_para_node.children[1], Leaf):
-                    # arguent -> arglist
-                    func_para_node.children[1] = ArgList([func_para_node.children[1].clone(), Comma(), arg_node]).children[1]
-                    log_info(fn, node.get_lineno(), "add keyword argument: {} = {}".format(new_arg, arg_val))
-                    continue
-
-                # f(x=1) -> f(x=1, new_arg = arg_val)
-                if func_para_node.children[1].type == SYMBOL.argument:
-                    if func_para_node.children[1].children[0].value == new_arg:
-                        warning_msg = "can not add the exist arg_name = {} ".format(new_arg)
-                        log_warning(fn, node.get_lineno(), warning_msg)
-                    else:
-                        # arguent -> arglist
-                        func_para_node.children[1] = ArgList([func_para_node.children[1].clone(), Comma(), arg_node]).children[1]
-                        log_info(fn, node.get_lineno(), "add keyword argument: {} = {}".format(new_arg, arg_val))
-                    continue
-
-                # f(x=1, y=2) -> f(x=1, y=2, new_arg= arg_val)
-                if func_para_node.children[1].type == SYMBOL.arglist:
-                    is_exist = False
-                    for ln in func_para_node.children[1].children:
-                        # kewword arg like x=1
-                        if isinstance(ln, Node) and ln.type == SYMBOL.argument:
-                            if ln.children[0].value == new_arg:
-                                warning_msg = "can not add the exist arg_name = {} ".format(new_arg)
-                                log_warning(fn, node.get_lineno(), warning_msg)
-                                is_exist = True
-                                break
-                    # next tuple
-                    if is_exist:
-                        continue
-
-                    #insert new_arg_node to the end
-                    func_para_node.children[1].append_child(Comma())
-                    func_para_node.children[1].append_child(arg_node)
-                    log_info(fn, node.get_lineno(), "add keyword argument: {} = {}".format(new_arg, arg_val))
+                utils.add_argument(filename, trailer_node, new_arg, arg_val)
             # delete or rename keyword argument 
-            elif len(arg_tuple) == 2:
-                old_arg = arg_tuple[0]
-                new_arg = arg_tuple[1]
-
-                #f() can not do rename or delete operation
-                if func_para_node.children == [LParen(), RParen()]:
-                    log_warning(fn, node.get_lineno(), "can not rename or delete argument for empty function parameters")
+            elif len(change) == 2:
+                old_arg = change[0].strip()
+                new_arg = change[1].strip()
+                if old_arg == "" and new_arg == "":
+                    logger.error('api: "{}", args_change: "{}", format should be ["arg", ""] or ["old_arg", "new_arg"]'.format(api_name, change))
                     continue
 
-                #f(1) can not do rename or delete operation
-                if isinstance(func_para_node.children[1], Leaf):
-                    log_warning(fn, node.get_lineno(), "can not rename or delete argument for none keyword parameters")
-                    continue
-
-                # f(x=1)
-                if func_para_node.children[1].type == SYMBOL.argument:
-                    if func_para_node.children[1].children[0].value != old_arg:
-                        log_warning(fn, node.get_lineno(), "can not find argument '{}' for delete or rename argument".format(old_arg))
-                    else:
-                        # f(x=1) -> f()
-                        if new_arg == "":
-                            func_para_node.children = [LParen(), RParen()]
-                            log_info(fn, node.get_lineno(), "delete keyword argument: {}".format(old_arg))
-                        # f(x=1) -> f(x_new = 1)
-                        else:
-                            func_para_node.children[1].children[0] = Name(new_arg, func_para_node.children[1].children[0].prefix)
-                            log_info(fn, node.get_lineno(), 'rename keyword argument from {} to {}'.format(old_arg, new_arg))
-                    continue
-
-                # f(x=1, y=1)
-                if func_para_node.children[1].type == SYMBOL.arglist:
-                    is_exist = False
-                    for ln in func_para_node.children[1].children:
-                        # kewword arg like x=1
-                        if isinstance(ln, Node) and ln.type == SYMBOL.argument:
-                            if ln.children[0].value == old_arg:
-                                #delete argument
-                                if new_arg == "":
-                                    if ln.next_sibling == Comma():
-                                        ln.next_sibling.remove()
-                                        ln.remove()
-                                    else:
-                                        if ln.prev_sibling == Comma():
-                                            ln.prev_sibling.remove()
-                                        ln.remove()
-                                    log_info(fn, node.get_lineno(), 'delete keyword argument: {}'.format(old_arg))
-                                #rename argument
-                                else:
-                                    ln.children[0] = Name(new_arg, ln.children[0].prefix)
-                                    log_info(fn, node.get_lineno(), 'rename keyword argument from {} to {}'.format(old_arg, new_arg))
-                                
-                                is_exist = True
-                                break
-                    if not is_exist:
-                        log_warning(fn, node.get_lineno(), "can not find argument '{}' for delete or rename argument".format(old_arg))
-
+                if new_arg == '':
+                    utils.remove_argument(filename, trailer_node, old_arg)
+                else:
+                    utils.rename_argument(filename, trailer_node, old_arg, new_arg)
             else:
-                log_warning(fn, node.get_lineno(), "the length of args_change tuple is not equal 2 or 3, api name ={}, tuple= {}".format(func_name, arg_tuple))
+                logger.error('api: "{}", args_change: "{}", format should be ["arg", ""] or ["old_arg", "new_arg"] or ["", "new_arg", "default_value"]'.format(api_name, change))
 
         # if api in args_warning, print warning info
-        if "args_warning" in change_spec[func_name]:
-            args_warning = change_spec[func_name]["args_warning"]
-            if func_para_node.children[1].type == SYMBOL.argument:
-                arg_name = func_para_node.children[1].children[0].value
-                if arg_name in args_warning:
-                    warning_info = args_warning[arg_name]
-                    log_warning(fn, node.get_lineno(), warning_info)
-
-            if func_para_node.children[1].type == SYMBOL.arglist:
-                for n in func_para_node.children[1].children:
-                    if isinstance(n, Node) and n.type == SYMBOL.argument:
-                        arg_name = n.children[0].value
-                        if arg_name in args_warning:
-                            warning_info = args_warning[arg_name]
-                            log_warning(fn, node.get_lineno(), warning_info)
-
-        if "args_transformer" in change_spec[func_name]:
-            transformer_func = eval("transformers." + change_spec[func_name]["args_transformer"])
-            transformer_func(node, capture, fn)
+        args_warning = change_spec[api_name].get("args_warning", {})
+        def _print_warning(argument_node):
+            if argument_node.type != python_symbols.argument:
+                return
+            key = argument_node.children[0].value
+            if key in args_warning:
+                warning_msg = args_warning[key]
+                log_warning(filename, argument_node.get_lineno(), warning_msg)
+        utils.apply_argument(filename, trailer_node, _print_warning)
+                
+        if "args_transformer" in change_spec[api_name]:
+            transformer_func = eval("transformers." + change_spec[api_name]["args_transformer"])
+            transformer_func(node, capture, filename)
 
     q.select(pattern).modify(_refector_args)
     return q
@@ -571,7 +448,7 @@ def refactor_with(q:Query, change_spec) -> "Query":
 
         # create simple_stmt node for "paddle.disable_static"
         arg_list_nodes = capture['arg_list']
-        simple_stmt = Node(SYMBOL.simple_stmt, [Newline()])
+        simple_stmt = Node(python_symbols.simple_stmt, [Newline()])
         _node = utils.code_repr('paddle.disable_static' + str(arg_list_nodes)).children[0].children[0]
         _node.parent = None
         simple_stmt.insert_child(0, _node)
@@ -582,7 +459,7 @@ def refactor_with(q:Query, change_spec) -> "Query":
         for node in suite_node.children:
             if not isinstance(node, Leaf):
                 continue
-            if node.type == TOKEN.NEWLINE:
+            if node.type == token.NEWLINE:
                 node.remove()
                 break
         # remove first indent node, and add indent prefix to sibling node.
@@ -590,7 +467,7 @@ def refactor_with(q:Query, change_spec) -> "Query":
         for node in suite_node.children:
             if not isinstance(node, Leaf):
                 continue
-            if node.type == TOKEN.INDENT:
+            if node.type == token.INDENT:
                 indent = node.value
                 if node.next_sibling is not None:
                     node.next_sibling.prefix = node.prefix + indent
@@ -600,7 +477,7 @@ def refactor_with(q:Query, change_spec) -> "Query":
         for node in suite_node.children[::-1]:
             if not isinstance(node, Leaf):
                 continue
-            if node.type == TOKEN.DEDENT:
+            if node.type == token.DEDENT:
                 if with_node.next_sibling is not None:
                     with_node.next_sibling.prefix = node.prefix
                 node.remove()
@@ -608,7 +485,7 @@ def refactor_with(q:Query, change_spec) -> "Query":
 
         # unindent all code in suite
         for node in suite_node.leaves():
-            if node.type == TOKEN.INDENT:
+            if node.type == token.INDENT:
                 node.value = utils.dec_indent(node.value)
             else:
                 node.prefix = utils.dec_indent(node.prefix)

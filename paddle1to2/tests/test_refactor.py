@@ -21,22 +21,6 @@ def _refactor_helper(refactor_func, input_src, change_spec) -> str:
         os.remove(ntf.name)
 
 
-class TestRefactorDemo(unittest.TestCase):
-    change_spec = {}
-
-    def test_refactor_demo(self):
-        input_src = '''
-        old_api()
-        '''
-        expected_src = '''
-        new_api()
-        '''
-        input_src = textwrap.dedent(input_src).strip() + '\n'
-        expected_src = textwrap.dedent(expected_src).strip() + '\n'
-        output_src = _refactor_helper(refactor_demo, input_src, self.change_spec)
-        self.assertEqual(output_src, expected_src)
-
-
 class TestRefactorImport(unittest.TestCase):
     def _run(self, change_spec, input_src, expected_src):
         input_src = textwrap.dedent(input_src).strip() + '\n'
@@ -250,6 +234,20 @@ class TestRefactorKwargs(unittest.TestCase):
         paddle.add(1, name=test)
         paddle.add(name=test)
         paddle.add(a=1, b=2, c=3, name=test)
+        '''
+        self._run(self.change_spec, input_src, expected_src)
+
+        input_src = '''
+        # comment line1
+        # comment line2
+        # comment line3
+        paddle.add(x=1, out=2)
+        '''
+        expected_src = '''
+        # comment line1
+        # comment line2
+        # comment line3
+        paddle.add(x_new=1, name=test)
         '''
         self._run(self.change_spec, input_src, expected_src)
 

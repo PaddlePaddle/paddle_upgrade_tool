@@ -8,9 +8,27 @@ from fnmatch import filter
 from fissix.pgen2 import driver
 from fissix import pytree
 from fissix.pygram import python_grammar, python_symbols
+from fissix.pgen2 import token
 from fissix.pytree import Leaf, Node
+from fissix.fixer_util import Attr, Comma, Dot, LParen, Name, Newline, RParen, KeywordArg, Number, ArgList, Newline
 
 from paddle1to2.common import logger
+
+def log_debug(filename, lineno, msg):
+    _msg = "{}:{} {}".format(filename, lineno, msg)
+    logger.debug(_msg)
+
+def log_info(filename, lineno, msg):
+    _msg = "{}:{} {}".format(filename, lineno, msg)
+    logger.info(_msg)
+
+def log_warning(filename, lineno, msg):
+    _msg = "{}:{} {}".format(filename, lineno, msg)
+    logger.warning(_msg)
+
+def log_error(filename, lineno, msg):
+    _msg = "{}:{} {}".format(filename, lineno, msg)
+    logger.error(_msg)
 
 def node2code(nodes, with_first_prefix=False):
     """
@@ -64,6 +82,151 @@ def replace_module_path(node, before, after):
     for i in range(len(after_node.children)):
         node.insert_child(i, after_node.children[i])
 
+
+def norm_arglist(trailer_node):
+    """
+    normilize argument list node, e.g.
+    Node(trailer, [Leaf(7, '('), Leaf(2, '3'), Leaf(8, ')')])
+    to
+    Node(trailer, [Leaf(7, '('), Node(arglist, [Node(argument, [Leaf(2, '1')])]), Leaf(8, ')')])
+    """
+    if trailer_node.type != python_symbols.trailer or len(trailer_node.children) < 2 or len(trailer_node.children) > 3:
+        logger.warning("node type is not trailer, or len(children) < 2 or len(children) > 3")
+        return
+    second_node = trailer_node.children[1]
+    # add arglist node if needed
+    if second_node.type != python_symbols.arglist:
+        if second_node.type == token.RPAR:
+            arglist_node = Node(python_symbols.arglist, [])
+            trailer_node.insert_child(1, arglist_node)
+        else:
+            _second_node = second_node.clone()
+            arglist_node = Node(python_symbols.arglist, [_second_node])
+            second_node.remove()
+            trailer_node.insert_child(1, arglist_node)
+    else:
+        arglist_node = second_node
+
+    # add argument node if needed
+    for i in range(len(arglist_node.children)):
+        node = arglist_node.children[i]
+        # skip "," node
+        if node.type == token.COMMA:
+            continue
+        if node.type != python_symbols.argument:
+            _node = node.clone()
+            arg_node = Node(python_symbols.argument, [_node])
+            node.replace(arg_node)
+
+def add_argument(filename, trailer_node, key, value):
+    """
+    add "key=value" to arglist in trailer_node,
+    if arglist already contains key, reassign key to value
+    """
+    if trailer_node.type != python_symbols.trailer and len(trailer_node.children) != 3:
+        log_warning(filename, trailer_node.get_lineno(), "node type is not trailer or len(children) != 3. you may need to call norm_arglist first.")
+        return
+    arglist_node = trailer_node.children[1]
+    if arglist_node.type != python_symbols.arglist:
+        log_warning(filename, trailer_node.get_lineno(), "trailer_node.children[1] is not arglist.")
+        return
+    found_key = False
+    for node in arglist_node.children:
+        if node.type != python_symbols.argument:
+            continue
+        _key_node = node.children[0]
+        if _key_node.value == key:
+            found_key = True
+            _value_node = node.children[2]
+            if _value_node.value != value:
+                _value_node_copy = _value_node.clone()
+                _value_node_copy.type = token.NAME
+                _value_node_copy.value = value
+                _value_node.replace(_value_node_copy)
+                log_warning(filename, arglist_node.get_lineno(), 'argument "{}" is reassigned to "{}"'.format(key, value))
+            break
+    if not found_key:
+        key_node = Name(key)
+        value_node = Name(value)
+        if arglist_node.children:
+            arglist_node.append_child(Comma())
+            key_node.prefix = " "
+        arg_node = KeywordArg(key_node, value_node)
+        arglist_node.append_child(arg_node)
+        log_warning(filename, arglist_node.get_lineno(), 'add argument "{}={}"'.format(key, value))
+
+
+def remove_argument(filename, trailer_node, key):
+    """
+    remove "key" from arglist in trailer_node,
+    """
+    if trailer_node.type != python_symbols.trailer and len(trailer_node.children) != 3:
+        log_warning(filename, trailer_node.get_lineno(), "node type is not trailer or len(children) != 3. you may need to call norm_arglist first.")
+        return
+    arglist_node = trailer_node.children[1]
+    if arglist_node.type != python_symbols.arglist:
+        log_warning(filename, trailer_node.get_lineno(), "trailer_node.children[1] is not arglist.")
+        return
+    found_key = False
+    for node in arglist_node.children:
+        if node.type != python_symbols.argument:
+            continue
+        _key_node = node.children[0]
+        if _key_node.value == key:
+            found_key = True
+            if node.prev_sibling is not None and node.prev_sibling.type is token.COMMA:
+                node.prev_sibling.remove()
+            elif node.next_sibling is not None and node.next_sibling.type is token.COMMA:
+                node.next_sibling.remove()
+            node.remove()
+            log_warning(filename, arglist_node.get_lineno(), 'argument "{}" is removed.'.format(key))
+            break
+    if not found_key:
+        log_warning(filename, arglist_node.get_lineno(), 'argument "{}" not found.'.format(key))
+
+
+def rename_argument(filename, trailer_node, old_key, new_key):
+    """
+    rename "old_key" to "new_key" in arglist in trailer_node,
+    """
+    if trailer_node.type != python_symbols.trailer and len(trailer_node.children) != 3:
+        log_warning(filename, trailer_node.get_lineno(), "node type is not trailer or len(children) != 3. you may need to call norm_arglist first.")
+        return
+    arglist_node = trailer_node.children[1]
+    if arglist_node.type != python_symbols.arglist:
+        log_warning(filename, trailer_node.get_lineno(), "trailer_node.children[1] is not arglist.")
+        return
+    found_key = False
+    for node in arglist_node.children:
+        if node.type != python_symbols.argument:
+            continue
+        _key_node = node.children[0]
+        if _key_node.value == old_key:
+            found_key = True
+            _key_node.value = new_key
+            log_warning(filename, arglist_node.get_lineno(), 'rename argument "{}" to "{}".'.format(old_key, new_key))
+            break
+    if not found_key:
+        log_warning(filename, arglist_node.get_lineno(), 'argument "{}" not found.'.format(old_key))
+
+
+def apply_argument(filename, trailer_node, fun):
+    """
+    call fun(argument_node) for each argument
+    """
+    if trailer_node.type != python_symbols.trailer and len(trailer_node.children) != 3:
+        log_warning(filename, trailer_node.get_lineno(), "node type is not trailer or len(children) != 3. you may need to call norm_arglist first.")
+        return
+    arglist_node = trailer_node.children[1]
+    if arglist_node.type != python_symbols.arglist:
+        log_warning(filename, trailer_node.get_lineno(), "trailer_node.children[1] is not arglist.")
+        return
+    for node in arglist_node.children:
+        if node.type != python_symbols.argument:
+            continue
+        fun(node)
+
+
 def startswith(module_path1, module_path2):
     """
     check module_path1 includes module_path2, e.g.
@@ -87,22 +250,6 @@ def startswith(module_path1, module_path2):
         if dotted_parts1[i] != dotted_parts2[i]:
             return False
     return True
-
-def log_debug(filename, lineno, msg):
-    _msg = "{}:{} {}".format(filename, lineno, msg)
-    logger.debug(_msg)
-
-def log_info(filename, lineno, msg):
-    _msg = "{}:{} {}".format(filename, lineno, msg)
-    logger.info(_msg)
-
-def log_warning(filename, lineno, msg):
-    _msg = "{}:{} {}".format(filename, lineno, msg)
-    logger.warning(_msg)
-
-def log_error(filename, lineno, msg):
-    _msg = "{}:{} {}".format(filename, lineno, msg)
-    logger.error(_msg)
 
 def _include_patterns(*patterns):
     """Factory function that can be used with copytree() ignore parameter.
