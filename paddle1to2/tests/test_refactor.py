@@ -194,11 +194,19 @@ class TestArgsToKwargs(unittest.TestCase):
     def test_args_to_kwargs(self):
         input_src = '''
         paddle.add(1,2)
-        paddle.add(1,y=2)
+        paddle.add(1, 2)
+        paddle.add(1, y=2)
+        paddle.add(1)
+        paddle.add(z=1)
+        paddle.add(paddle.to.api, paddle.to.api())
         '''
         expected_src = '''
         paddle.add(x=1,y=2)
-        paddle.add(x=1,y=2)
+        paddle.add(x=1, y=2)
+        paddle.add(x=1, y=2)
+        paddle.add(x=1)
+        paddle.add(z=1)
+        paddle.add(x=paddle.to.api, y=paddle.to.api())
         '''
         self._run(self.change_spec, input_src, expected_src)
 
@@ -211,7 +219,7 @@ class TestRefactorKwargs(unittest.TestCase):
                 [ "", "name", "test" ]
             ],
             "args_warning": {
-                "x_new": "x_new is deleted in paddle.kron"
+                "x_new": "x_new is deleted in paddle.add"
             }
         }
     }

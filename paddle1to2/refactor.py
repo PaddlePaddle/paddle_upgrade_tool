@@ -280,12 +280,14 @@ def args_to_kwargs(q:Query, change_spec) -> "Query":
                 return
             if len(argument_node.children) >= 3:
                 encounter_kwarg = True
-                msg = 'args_list: "{}" is longer than positional arguments, redundant argument will be skipped.'.format(args_list)
+                msg = 'args_list: "{}" is longer than positional arguments, redundant arguments will be skipped.'.format(args_list)
                 log_warning(filename, argument_node.get_lineno(), msg)
                 return
             key = args_list[idx]
             argument_node.insert_child(0, Leaf(token.EQUAL, "="))
             argument_node.insert_child(0, Name(key))
+            argument_node.children[0].prefix = argument_node.children[2].prefix
+            argument_node.children[2].prefix = ""
             idx += 1
             msg = 'add argument name "{}" for {}-th argument.'.format(key, idx)
             log_debug(filename, argument_node.get_lineno(), msg)
@@ -354,10 +356,11 @@ def refactor_kwargs(q:Query, change_spec) -> "Query":
         def _print_warning(argument_node):
             if argument_node.type != python_symbols.argument:
                 return
-            key = argument_node.children[0].value
-            if key in args_warning:
-                warning_msg = args_warning[key]
-                log_warning(filename, argument_node.get_lineno(), warning_msg)
+            if len(argument_node.children) == 3:
+               key = argument_node.children[0].value
+               if key in args_warning:
+                   warning_msg = args_warning[key]
+                   log_warning(filename, argument_node.get_lineno(), warning_msg)
         utils.apply_argument(filename, trailer_node, _print_warning)
                 
         if "args_transformer" in change_spec[api_name]:
