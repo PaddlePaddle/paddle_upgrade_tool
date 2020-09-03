@@ -153,7 +153,9 @@ def refactor_import(q: Query, change_spec) -> "Query":
             old_name = node.value
             new_name = rename_dict[old_name]
             if node.parent is not None:
-                new_node = utils.code_repr(new_name)
+                _node = utils.code_repr(new_name).children[0].children[0]
+                _node.parent = None
+                new_node = _node
                 new_node.children[0].prefix = node.prefix
                 if node.parent.type == SYMBOL.power:
                     node.replace(new_node.children)
@@ -570,7 +572,9 @@ def refactor_with(q:Query, change_spec) -> "Query":
         # create simple_stmt node for "paddle.disable_static"
         arg_list_nodes = capture['arg_list']
         simple_stmt = Node(SYMBOL.simple_stmt, [Newline()])
-        simple_stmt.insert_child(0, utils.code_repr('paddle.disable_static' + str(arg_list_nodes)))
+        _node = utils.code_repr('paddle.disable_static' + str(arg_list_nodes)).children[0].children[0]
+        _node.parent = None
+        simple_stmt.insert_child(0, _node)
         simple_stmt.prefix = with_node.prefix
 
         suite_node = capture['suite']

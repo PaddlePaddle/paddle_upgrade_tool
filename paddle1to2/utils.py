@@ -39,9 +39,7 @@ def code_repr(src: str):
     """
     driver_ = driver.Driver(python_grammar, convert=pytree.convert)
     tree = driver_.parse_stream(StringIO(src + '\n'))
-    ret = tree.children[0].children[0]
-    ret.parent = None
-    return ret
+    return tree
 
 def replace_module_path(node, before, after):
     """
@@ -57,7 +55,9 @@ def replace_module_path(node, before, after):
 
     """
     before_parts = before.split('.')
-    after_node = code_repr(after)
+    _node = code_repr(after).children[0].children[0]
+    _node.parent = None
+    after_node = _node
     # reserve prefix
     after_node.children[0].prefix = node.children[0].prefix
     del node.children[:len(before_parts)]
