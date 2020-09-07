@@ -163,7 +163,7 @@ def remove_argument(filename, trailer_node, key):
     if trailer_node.type != python_symbols.trailer and len(trailer_node.children) != 3:
         log_warning(filename, trailer_node.get_lineno(), "node type is not trailer or len(children) != 3. you may need to call norm_arglist first.")
         return
-    #removed_value = None # record removed key=value and arglist_node
+    removed_value = None # record removed key=value and arglist_node
     arglist_node = trailer_node.children[1]
     if arglist_node.type != python_symbols.arglist:
         log_warning(filename, trailer_node.get_lineno(), "trailer_node.children[1] is not arglist.")
@@ -175,7 +175,7 @@ def remove_argument(filename, trailer_node, key):
         _key_node = node.children[0]
         if _key_node.value == key:
             found_key = True
-            #removed_value = node.children[2].value if len(node.children) >= 3 else None
+            removed_value = node.children[2].value if len(node.children) >= 3 else None
             if node.prev_sibling is not None and node.prev_sibling.type is token.COMMA:
                 node.prev_sibling.remove()
             elif node.next_sibling is not None and node.next_sibling.type is token.COMMA:
@@ -185,7 +185,7 @@ def remove_argument(filename, trailer_node, key):
             break
     if not found_key:
         log_warning(filename, arglist_node.get_lineno(), 'argument "{}" not found.'.format(key))
-    #return removed_value
+    return removed_value
 
 
 def rename_argument(filename, trailer_node, old_key, new_key):
@@ -369,3 +369,29 @@ def valid_path(inpath):
 
     return valid
 
+def get_node_index(node):
+    """
+    get index of node in its parent's children
+    """
+    if node is None or node.parent is None:
+        return -1
+    for idx, child in enumerate(node.parent.children):
+        if child is node:
+            return idx
+    return -1
+
+def insert_node_behind(node1, nodes):
+    """
+    insert nodes behind node1
+    """
+    if node1 is None or node1.parent is None:
+        return
+    idx = get_node_index(node1)
+    if idx != -1:
+        idx += 1
+        if not isinstance(nodes, list):
+            nodes = [nodes,]
+            for node in nodes:
+                if node is not None:
+                    node1.parent.insert_child(idx, node)
+                    idx += 1

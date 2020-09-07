@@ -435,5 +435,68 @@ class TestWithRefactor(unittest.TestCase):
         self._run(self.change_spec, input_src, expected_src)
 
 
+class TestActTransformer(unittest.TestCase):
+    maxDiff = None
+    change_spec = {
+        "paddle.Conv2D": {
+            "args_change": [
+                [ "act", "" ],
+            ],
+        },
+        "paddle.elementwise_add": {
+            "args_change": [
+                [ "act", "" ],
+            ],
+        },
+    }
+
+    def _run(self, change_spec, input_src, expected_src):
+        input_src = textwrap.dedent(input_src).strip() + '\n'
+        expected_src = textwrap.dedent(expected_src).strip() + '\n'
+        output_src = _refactor_helper(refactor_kwargs, input_src, change_spec)
+        self.assertEqual(output_src, expected_src)
+
+    def test_act_transformer(self):
+        input_src = '''
+        import paddle
+
+        class SimpleImgConvPool():
+            def __init__(self, act=None):
+                self._conv2d_1 = paddle.Conv2D(act=act)
+                self._conv2d_2 = paddle.Conv2D(act="relu")
+                self._conv2d_3 = paddle.Conv2D(act=None)
+
+            def forward(self, x):
+                x = self._conv2d_1(x)
+                x = self._conv2d_2(x)
+                x = self._conv2d_3(x)
+                x = paddle.elementwise_add(x, act="softmax")
+                x = paddle.elementwise_add(x, act=act)
+                return x
+        '''
+        expected_src = '''
+        import paddle
+
+        class SimpleImgConvPool():
+            def __init__(self, act=None):
+                self._conv2d_1 = paddle.Conv2D()
+                self._conv2d_2 = paddle.Conv2D()
+                self._conv2d_3 = paddle.Conv2D()
+
+            def forward(self, x):
+                x = self._conv2d_1(x)
+                x = getattr(paddle.nn.function, act)(x) if act else x
+                x = self._conv2d_2(x)
+                x = paddle.nn.functional.relu(x)
+                x = self._conv2d_3(x)
+                x = paddle.elementwise_add(x)
+                x = paddle.nn.functional.softmax(x)
+                x = paddle.elementwise_add(x)
+                x = getattr(paddle.nn.function, act)(x) if act else x
+                return x
+        '''
+        self._run(self.change_spec, input_src, expected_src)
+
+
 if __name__ == '__main__':
     unittest.main()

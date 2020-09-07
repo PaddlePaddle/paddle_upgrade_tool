@@ -3,7 +3,7 @@ from bowler.helpers import power_parts, quoted_parts, dotted_parts
 from bowler.types import LN, Capture, Filename
 
 from fissix.pytree import Leaf, Node, type_repr
-from fissix.fixer_util import Attr, Comma, Dot, LParen, Name, Newline, RParen, KeywordArg, Number, ArgList, Newline
+from fissix.fixer_util import Attr, Comma, Dot, LParen, Name, Newline, RParen, KeywordArg, Number, ArgList
 from fissix.fixer_util import is_import, touch_import, find_root
 from fissix.pygram import python_grammar, python_symbols
 from fissix.patcomp import PatternCompiler
@@ -343,10 +343,9 @@ def refactor_kwargs(q:Query, change_spec) -> "Query":
                     continue
 
                 if new_arg == '':
-                    utils.remove_argument(filename, trailer_node, old_arg)
-                    #removed_value = utils.remove_argument(filename, trailer_node, old_arg)
-                    #if old_arg == 'act' and removed_value is not None:
-                    #    transformers.act_transformer(trailer_node, removed_value)
+                    removed_value = utils.remove_argument(filename, trailer_node, old_arg)
+                    if old_arg == 'act' and removed_value is not None:
+                        transformers.act_transformer(filename, trailer_node, removed_value)
                 else:
                     utils.rename_argument(filename, trailer_node, old_arg, new_arg)
             else:
