@@ -96,18 +96,17 @@ def refactor_import(q: Query, change_spec) -> "Query":
     pattern = pattern.format(**_kwargs)
 
     imports_map = {}
-    paddle_imported = False
-    paddle_found = False
+    paddle_imported = set()
+    paddle_found = set()
 
     def _find_imports(node: LN, capture: Capture, filename: Filename) -> bool:
-        nonlocal paddle_imported, paddle_found
         if not is_import(node):
             return True
         if capture and 'name_import' in capture:
-            paddle_imported = True
-            paddle_found = True
+            paddle_imported.add(filename)
+            paddle_found.add(filename)
         if capture and ('module_import' in capture or 'module_imports' in capture or 'module_nickname' in capture):
-            paddle_found = True
+            paddle_found.add(filename)
             if filename not in imports_map:
                 imports_map[filename] = {}
             if 'module_import' in capture:
@@ -183,15 +182,14 @@ def refactor_import(q: Query, change_spec) -> "Query":
 
     # add "import paddle" if needed
     def _add_import(node: LN, capture: Capture, filename: Filename) -> None:
-        nonlocal paddle_imported, paddle_found
         if node.type != python_symbols.file_input:
             return
-        if paddle_imported:
+        if filename in paddle_imported:
             return
-        if paddle_found:
+        if filename in paddle_found:
             touch_import(None, 'paddle', node)
             log_info(filename, node.get_lineno(), 'add "import paddle"')
-            paddle_imported = True
+            paddle_imported.add(filename)
     q.modify(_add_import)
 
     return q
@@ -476,13 +474,23 @@ def refactor_with(q:Query, change_spec) -> "Query":
                     node.next_sibling.prefix = node.prefix + indent
                 node.remove()
                 break
-        # remove last dedent node
+
+        # transfer post leading dedent node prefix to sibling of with node
+        leaves = [leaf for leaf in suite_node.leaves()]
+        # visit all leaves in reversed order
+        last_dedent_leaf_idx = len(leaves)
+        for leaf in leaves[::-1]:
+            if leaf.type == token.DEDENT:
+                with_node.next_sibling.prefix = leaf.prefix + with_node.next_sibling.prefix
+                leaf.prefix = ""
+            else:
+                break
+
+        # remove dedenet node corresponding to with node
         for node in suite_node.children[::-1]:
             if not isinstance(node, Leaf):
                 continue
             if node.type == token.DEDENT:
-                if with_node.next_sibling is not None:
-                    with_node.next_sibling.prefix = node.prefix
                 node.remove()
                 break
 
