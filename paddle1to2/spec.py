@@ -4341,9 +4341,29 @@ change_spec = {
         "alias": ["paddle.fluid.optimizer.SGDOptimizer"],
         "update_to": "paddle.optimizer.SGD"
     },
+    # manual check
     "paddle.fluid.optimizer.Momentum": {
         "alias": ["paddle.fluid.optimizer.MomentumOptimizer"],
-        "update_to": "paddle.optimizer.Momentum"
+        "update_to": "paddle.optimizer.Momentum",
+        "args_list": [
+            "learning_rate",
+            "momentum",
+            "parameter_list",
+            "use_nesterov",
+            "regularization",
+            "grad_clip",
+            "name"
+        ],
+        "args_change": [
+            [
+                "parameter_list",
+                "parameters"
+            ],
+            [
+                "regularization",
+                "weight_decay"
+            ]
+        ]
     },
     "paddle.fluid.optimizer.Adagrad": {
         "alias": ["paddle.fluid.optimizer.AdagradOptimizer"],
