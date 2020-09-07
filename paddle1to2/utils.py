@@ -163,6 +163,7 @@ def remove_argument(filename, trailer_node, key):
     if trailer_node.type != python_symbols.trailer and len(trailer_node.children) != 3:
         log_warning(filename, trailer_node.get_lineno(), "node type is not trailer or len(children) != 3. you may need to call norm_arglist first.")
         return
+    #removed_value = None # record removed key=value and arglist_node
     arglist_node = trailer_node.children[1]
     if arglist_node.type != python_symbols.arglist:
         log_warning(filename, trailer_node.get_lineno(), "trailer_node.children[1] is not arglist.")
@@ -174,6 +175,7 @@ def remove_argument(filename, trailer_node, key):
         _key_node = node.children[0]
         if _key_node.value == key:
             found_key = True
+            #removed_value = node.children[2].value if len(node.children) >= 3 else None
             if node.prev_sibling is not None and node.prev_sibling.type is token.COMMA:
                 node.prev_sibling.remove()
             elif node.next_sibling is not None and node.next_sibling.type is token.COMMA:
@@ -183,6 +185,7 @@ def remove_argument(filename, trailer_node, key):
             break
     if not found_key:
         log_warning(filename, arglist_node.get_lineno(), 'argument "{}" not found.'.format(key))
+    #return removed_value
 
 
 def rename_argument(filename, trailer_node, old_key, new_key):
@@ -292,6 +295,16 @@ def dec_indent(indent, count=1):
     elif indent.endswith('    '):
         indent = indent[:len(indent) - 4 * count]
     return indent
+
+def get_indent(node):
+    """
+    get indent string of current node
+    """
+    while node is not None:
+        if node.type == token.INDENT:
+            return node.value
+        node = node.prev_sibling
+    return ""
 
 def _is_windows():
     """

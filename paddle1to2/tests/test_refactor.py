@@ -284,9 +284,11 @@ class TestWithRefactor(unittest.TestCase):
 
         paddle.disable_static(place)
         pass
+        paddle.enable_static()
 
         paddle.disable_static()
         pass
+        paddle.enable_static()
         '''
         self._run(self.change_spec, input_src, expected_src)
 
@@ -307,10 +309,12 @@ class TestWithRefactor(unittest.TestCase):
         paddle.disable_static(place)
         pass
         pass
+        paddle.enable_static()
 
         paddle.disable_static()
         pass
         pass
+        paddle.enable_static()
         '''
         self._run(self.change_spec, input_src, expected_src)
 
@@ -334,11 +338,13 @@ class TestWithRefactor(unittest.TestCase):
         pass
         pass
         pass
+        paddle.enable_static()
 
         paddle.disable_static()
         pass
         pass
         pass
+        paddle.enable_static()
         '''
         self._run(self.change_spec, input_src, expected_src)
 
@@ -363,12 +369,14 @@ class TestWithRefactor(unittest.TestCase):
         paddle.disable_static(place)
         pass
         pass
+        paddle.enable_static()
 
         # comment line2
         # comment line3
         paddle.disable_static()
         pass
         pass
+        paddle.enable_static()
         '''
         self._run(self.change_spec, input_src, expected_src)
 
@@ -396,6 +404,7 @@ class TestWithRefactor(unittest.TestCase):
                 paddle.disable_static()
                 pass
                 pass
+                paddle.enable_static()
                 pass
             else:
                 pass
@@ -418,6 +427,7 @@ class TestWithRefactor(unittest.TestCase):
             paddle.disable_static()
             if True is True:
                 pass
+            paddle.enable_static()
 
             pass
         pass

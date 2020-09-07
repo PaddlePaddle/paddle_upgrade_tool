@@ -344,6 +344,9 @@ def refactor_kwargs(q:Query, change_spec) -> "Query":
 
                 if new_arg == '':
                     utils.remove_argument(filename, trailer_node, old_arg)
+                    #removed_value = utils.remove_argument(filename, trailer_node, old_arg)
+                    #if old_arg == 'act' and removed_value is not None:
+                    #    transformers.act_transformer(trailer_node, removed_value)
                 else:
                     utils.rename_argument(filename, trailer_node, old_arg, new_arg)
             else:
@@ -361,6 +364,7 @@ def refactor_kwargs(q:Query, change_spec) -> "Query":
                    log_warning(filename, argument_node.get_lineno(), warning_msg)
         utils.apply_argument(filename, trailer_node, _print_warning)
                 
+        # run customized transformer
         if "args_transformer" in change_spec[api_name]:
             transformer_func = eval("transformers." + change_spec[api_name]["args_transformer"])
             transformer_func(node, capture, filename)
@@ -449,11 +453,19 @@ def refactor_with(q:Query, change_spec) -> "Query":
 
         # create simple_stmt node for "paddle.disable_static"
         arg_list_nodes = capture['arg_list']
-        simple_stmt = Node(python_symbols.simple_stmt, [Newline()])
+        simple_stmt_disable_static = Node(python_symbols.simple_stmt, [Newline()])
         _node = utils.code_repr('paddle.disable_static' + str(arg_list_nodes)).children[0].children[0]
         _node.parent = None
-        simple_stmt.insert_child(0, _node)
-        simple_stmt.prefix = with_node.prefix
+        simple_stmt_disable_static.insert_child(0, _node)
+        simple_stmt_disable_static.prefix = with_node.prefix
+
+        # create simple_stmt node for "paddle.enable_static"
+        simple_stmt_enable_static = Node(python_symbols.simple_stmt, [Newline()])
+        simple_stmt_enable_static
+        _node = utils.code_repr('paddle.enable_static()').children[0].children[0]
+        _node.parent = None
+        simple_stmt_enable_static.insert_child(0, _node)
+        simple_stmt_enable_static.prefix = utils.get_indent(with_node)
 
         suite_node = capture['suite']
         # remove first newline
@@ -502,11 +514,12 @@ def refactor_with(q:Query, change_spec) -> "Query":
                 node.prefix = utils.dec_indent(node.prefix)
 
         with_node.remove()
-        parent.insert_child(idx, simple_stmt)
+        parent.insert_child(idx, simple_stmt_disable_static)
         idx += 1
         for node in suite_node.children:
             parent.insert_child(idx, node)
             idx += 1
+        parent.insert_child(idx, simple_stmt_enable_static)
 
     q.select(pattern).modify(_remove_with_dygraph_guard)
     return q
