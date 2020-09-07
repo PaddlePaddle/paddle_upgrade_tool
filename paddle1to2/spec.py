@@ -3998,10 +3998,11 @@ change_spec = {
     #         ]
     #     ]
     # },
-    "paddle.fluid.dygraph.Embedding": {
-        "alias": ["paddle.fluid.dygraph.nn.Embedding"],
-        "update_to": "paddle.nn.Embedding"
-    },
+    # TODO transformer
+    # "paddle.fluid.dygraph.Embedding": {
+    #     "alias": ["paddle.fluid.dygraph.nn.Embedding"],
+    #     "update_to": "paddle.nn.Embedding"
+    # },
     # FlUID_WARNING
     # "paddle.fluid.dygraph.GRUUnit": {
     #     "update_to": "paddle.fluid.dygraph.GRUUnit"
