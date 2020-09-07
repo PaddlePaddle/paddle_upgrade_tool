@@ -180,11 +180,12 @@ def remove_argument(filename, trailer_node, key):
                 node.prev_sibling.remove()
             elif node.next_sibling is not None and node.next_sibling.type is token.COMMA:
                 node.next_sibling.remove()
+            lineno = arglist_node.get_lineno()
             node.remove()
-            log_warning(filename, arglist_node.get_lineno(), 'argument "{}" is removed.'.format(key))
+            log_warning(filename, lineno, 'argument "{}" is removed.'.format(key))
             break
     if not found_key:
-        log_warning(filename, arglist_node.get_lineno(), 'argument "{}" not found.'.format(key))
+        log_info(filename, arglist_node.get_lineno(), 'argument "{}" not found.'.format(key))
     return removed_value
 
 
@@ -210,7 +211,7 @@ def rename_argument(filename, trailer_node, old_key, new_key):
             log_warning(filename, arglist_node.get_lineno(), 'rename argument "{}" to "{}".'.format(old_key, new_key))
             break
     if not found_key:
-        log_warning(filename, arglist_node.get_lineno(), 'argument "{}" not found.'.format(old_key))
+        log_info(filename, arglist_node.get_lineno(), 'argument "{}" not found.'.format(old_key))
 
 
 def apply_argument(filename, trailer_node, fun):

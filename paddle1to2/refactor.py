@@ -25,14 +25,14 @@ __all__ = [
     'post_refactor',
     ]
 
-def refactor_demo(q: Query, change_spec) -> "Query":
+def refactor_demo(q: Query, change_spec):
     #q.select_function("old_api").is_call().rename("new_api").process(processors.demo_post_processor)
     #q.select_function("old_api").rename("new_api")
 
     #q.fixer(fixers.FixerDemo)
     return q
 
-def refactor_import(q: Query, change_spec) -> "Query":
+def refactor_import(q: Query, change_spec):
     """
     1. add "import paddle" if needed.
     2. remove "import paddle.mod" if needed.
@@ -99,7 +99,7 @@ def refactor_import(q: Query, change_spec) -> "Query":
     paddle_imported = set()
     paddle_found = set()
 
-    def _find_imports(node: LN, capture: Capture, filename: Filename) -> bool:
+    def _find_imports(node: LN, capture: Capture, filename: Filename):
         if not is_import(node):
             return True
         if capture and 'name_import' in capture:
@@ -129,7 +129,7 @@ def refactor_import(q: Query, change_spec) -> "Query":
 
     q.select(pattern).filter(_find_imports)
     # convert to full module path
-    def _full_module_path(node: LN, capture: Capture, filename: Filename) -> None:
+    def _full_module_path(node: LN, capture: Capture, filename: Filename):
         if not (isinstance(node, Leaf) and node.type == token.NAME):
             return
         if filename not in imports_map:
@@ -164,7 +164,7 @@ def refactor_import(q: Query, change_spec) -> "Query":
     q.modify(_full_module_path)
 
     # remove as_import and from_import
-    def _remove_import(node: LN, capture: Capture, filename: Filename) -> None:
+    def _remove_import(node: LN, capture: Capture, filename: Filename):
         if not is_import(node):
             return
         _node = capture.get('as_import', None) or capture.get('from_import', None)
@@ -181,7 +181,7 @@ def refactor_import(q: Query, change_spec) -> "Query":
     q.modify(_remove_import)
 
     # add "import paddle" if needed
-    def _add_import(node: LN, capture: Capture, filename: Filename) -> None:
+    def _add_import(node: LN, capture: Capture, filename: Filename):
         if node.type != python_symbols.file_input:
             return
         if filename in paddle_imported:
@@ -194,7 +194,7 @@ def refactor_import(q: Query, change_spec) -> "Query":
 
     return q
 
-def norm_api_alias(q: Query, change_spec) -> "Query":
+def norm_api_alias(q: Query, change_spec):
     """
     rename all alias to main alias. e.g.
     origin code snippet:
@@ -213,7 +213,7 @@ def norm_api_alias(q: Query, change_spec) -> "Query":
             alias_map[alias] = main_alias
 
     pattern = """ power< 'paddle' trailer< any* >* > """
-    def _norm(node: LN, capture: Capture, filename: Filename) -> None:
+    def _norm(node: LN, capture: Capture, filename: Filename):
         code = ''
         for leaf in node.leaves():
             code = code + leaf.value
@@ -230,12 +230,12 @@ def norm_api_alias(q: Query, change_spec) -> "Query":
         update_to = change_spec[main_alias].get('update_to', None)
         # if main_alias contains "update_to" field, rename alias to "update_to" directly
         utils.replace_module_path(node, alias, main_alias)
-        log_warning(filename, node.get_lineno(), '{} -> {}'.format(alias, main_alias))
+        log_info(filename, node.get_lineno(), '{} -> {}'.format(alias, main_alias))
     q.select(pattern).modify(_norm)
 
     return q
 
-def args_to_kwargs(q:Query, change_spec) -> "Query":
+def args_to_kwargs(q:Query, change_spec):
     """
     convert args to kwargs. e.g.
     origin code snippet:
@@ -279,7 +279,7 @@ def args_to_kwargs(q:Query, change_spec) -> "Query":
             if len(argument_node.children) >= 3:
                 encounter_kwarg = True
                 msg = 'args_list: "{}" is longer than positional arguments, redundant arguments will be skipped.'.format(args_list)
-                log_warning(filename, argument_node.get_lineno(), msg)
+                log_info(filename, argument_node.get_lineno(), msg)
                 return
             key = args_list[idx]
             argument_node.insert_child(0, Leaf(token.EQUAL, "="))
@@ -294,7 +294,7 @@ def args_to_kwargs(q:Query, change_spec) -> "Query":
     q.select(pattern).modify(_modify_args_to_kwargs)
     return q
 
-def refactor_kwargs(q:Query, change_spec) -> "Query":
+def refactor_kwargs(q:Query, change_spec):
     """
     rename, remove or add kwargs. e.g.
     origin code snippet:
@@ -313,7 +313,7 @@ def refactor_kwargs(q:Query, change_spec) -> "Query":
         power< api=('paddle' any*) trailer_node=trailer<  '(' any* ')' > >
     )
     """
-    def _refector_args(node: LN, capture: Capture, filename: Filename) -> None:
+    def _refector_args(node: LN, capture: Capture, filename: Filename):
         #get full api, e.g. paddle.fluid.layers.Layer
         api_name = utils.node2code(capture["api"]).strip()
         if api_name not in change_spec:
@@ -371,7 +371,7 @@ def refactor_kwargs(q:Query, change_spec) -> "Query":
     q.select(pattern).modify(_refector_args)
     return q
 
-def api_rename(q:Query, change_spec) -> "Query":
+def api_rename(q:Query, change_spec):
     """
     1. rename old api to new api. e.g.
         origin code snippet:
@@ -396,7 +396,7 @@ def api_rename(q:Query, change_spec) -> "Query":
             warning_map[main_alias] = warning
 
     pattern = """ power< 'paddle' trailer< any* >* > """
-    def _api_rename(node: LN, capture: Capture, filename: Filename) -> None:
+    def _api_rename(node: LN, capture: Capture, filename: Filename):
         code = ''
         for leaf in node.leaves():
             code = code + leaf.value
@@ -425,7 +425,7 @@ def api_rename(q:Query, change_spec) -> "Query":
 
     return q
 
-def refactor_with(q:Query, change_spec) -> "Query":
+def refactor_with(q:Query, change_spec):
     """
     refactor with syntax, e.g.
     origin code snippet:
@@ -440,7 +440,7 @@ def refactor_with(q:Query, change_spec) -> "Query":
         ```
     """
     pattern = "with=with_stmt< 'with' guard=(power< api=(( 'paddle' | 'fluid' | 'dygraph' ) trailer< '.' NAME >* trailer< '.' 'guard' > ) arg_list=trailer< '(' any* ')' > >) any* suite=suite< any* > any* >"
-    def _remove_with_dygraph_guard(node: LN, capture: Capture, filename: Filename) -> None:
+    def _remove_with_dygraph_guard(node: LN, capture: Capture, filename: Filename):
         # index of with_node, with_node will be replaced with simple_stmt node
         with_node = capture['with']
         parent = with_node.parent
@@ -523,7 +523,7 @@ def refactor_with(q:Query, change_spec) -> "Query":
     q.select(pattern).modify(_remove_with_dygraph_guard)
     return q
 
-def post_refactor(q:Query, change_spec) -> "Query":
+def post_refactor(q:Query, change_spec):
     """
     post refactor after all prior refactor steps.
     """
