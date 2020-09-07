@@ -402,6 +402,27 @@ class TestWithRefactor(unittest.TestCase):
         '''
         self._run(self.change_spec, input_src, expected_src)
 
+        input_src = '''
+        import paddle
+        if True is True:
+            with fluid.dygraph.guard():
+                if True is True:
+                    pass
+
+            pass
+        pass
+        '''
+        expected_src = '''
+        import paddle
+        if True is True:
+            paddle.disable_static()
+            if True is True:
+                pass
+
+            pass
+        pass
+        '''
+        self._run(self.change_spec, input_src, expected_src)
 
 
 if __name__ == '__main__':

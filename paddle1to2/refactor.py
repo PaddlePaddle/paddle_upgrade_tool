@@ -476,13 +476,23 @@ def refactor_with(q:Query, change_spec) -> "Query":
                     node.next_sibling.prefix = node.prefix + indent
                 node.remove()
                 break
-        # remove last dedent node
+
+        # transfer post leading dedent node prefix to sibling of with node
+        leaves = [leaf for leaf in suite_node.leaves()]
+        # visit all leaves in reversed order
+        last_dedent_leaf_idx = len(leaves)
+        for leaf in leaves[::-1]:
+            if leaf.type == token.DEDENT:
+                with_node.next_sibling.prefix = leaf.prefix + with_node.next_sibling.prefix
+                leaf.prefix = ""
+            else:
+                break
+
+        # remove dedenet node corresponding to with node
         for node in suite_node.children[::-1]:
             if not isinstance(node, Leaf):
                 continue
             if node.type == token.DEDENT:
-                if with_node.next_sibling is not None:
-                    with_node.next_sibling.prefix = node.prefix
                 node.remove()
                 break
 
