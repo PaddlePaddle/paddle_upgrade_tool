@@ -460,6 +460,8 @@ class TestActTransformer(unittest.TestCase):
         input_src = '''
         import paddle
 
+        visible_act = "relu"
+
         class SimpleImgConvPool():
             def __init__(self, act=None):
                 self._conv2d_1 = paddle.Conv2D(act=act)
@@ -471,28 +473,31 @@ class TestActTransformer(unittest.TestCase):
                 x = self._conv2d_2(x)
                 x = self._conv2d_3(x)
                 x = paddle.elementwise_add(x, act="softmax")
-                x = paddle.elementwise_add(x, act=act)
+                x = paddle.elementwise_add(x, act=visible_act)
                 return x
         '''
         expected_src = '''
         import paddle
 
+        visible_act = "relu"
+
         class SimpleImgConvPool():
             def __init__(self, act=None):
                 self._conv2d_1 = paddle.Conv2D()
+                self._act = act
                 self._conv2d_2 = paddle.Conv2D()
                 self._conv2d_3 = paddle.Conv2D()
 
             def forward(self, x):
                 x = self._conv2d_1(x)
-                x = getattr(paddle.nn.function, act)(x) if act else x
+                x = getattr(paddle.nn.function, self._act)(x) if self._act else x
                 x = self._conv2d_2(x)
                 x = paddle.nn.functional.relu(x)
                 x = self._conv2d_3(x)
                 x = paddle.elementwise_add(x)
                 x = paddle.nn.functional.softmax(x)
                 x = paddle.elementwise_add(x)
-                x = getattr(paddle.nn.function, act)(x) if act else x
+                x = getattr(paddle.nn.function, visible_act)(x) if visible_act else x
                 return x
         '''
         self._run(self.change_spec, input_src, expected_src)
