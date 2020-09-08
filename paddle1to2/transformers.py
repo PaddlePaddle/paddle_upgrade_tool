@@ -46,7 +46,7 @@ def act_transformer(filename, trailer_node, removed_value):
     else:
         _function_act_transformer(filename, expr_node, removed_value)
 
-_pattern_funcdef_forward = "funcdef< 'def' 'forward' any* >"
+_pattern_funcdef_forward = "funcdef< 'def' 'forward' parameters< '(' ( 'self' | typedargslist< 'self' any* > ) any* ')' > any* >"
 _pattern_funcdef_forward = patcomp.compile_pattern(_pattern_funcdef_forward)
 _pattern_expr_stmt = "simple_stmt< expr_stmt< left=(any*) '=' right=(any*) > any* >"
 _pattern_expr_stmt = patcomp.compile_pattern(_pattern_expr_stmt)
@@ -64,7 +64,16 @@ def _forward_act_transformer(filename, expr_node, layer_name, removed_value):
         return
     # find def forward function node
     forward_node = None
-    for node in funcdef_node.parent.children:
+    classdef_node = None
+    node = funcdef_node
+    while node is not None:
+        if node.type == python_symbols.classdef:
+            classdef_node = node
+            break
+        node = node.parent
+    if classdef_node is None:
+        return
+    for node in classdef_node.pre_order():
         results = {'node': node}
         if _pattern_funcdef_forward.match(node, results) and results["node"] is node:
             forward_node = node

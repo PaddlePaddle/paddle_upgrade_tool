@@ -502,6 +502,64 @@ class TestActTransformer(unittest.TestCase):
         '''
         self._run(self.change_spec, input_src, expected_src)
 
+        input_src = '''
+        import paddle
+
+        class SimpleImgConvPool():
+            def __init__(self):
+                self._conv2d = paddle.Conv2D(act="relu")
+
+            @decorator
+            def forward(self, x):
+                x = self._conv2d(x)
+                return x
+        '''
+        expected_src = '''
+        import paddle
+
+        class SimpleImgConvPool():
+            def __init__(self):
+                self._conv2d = paddle.Conv2D()
+
+            @decorator
+            def forward(self, x):
+                x = self._conv2d(x)
+                x = paddle.nn.functional.relu(x)
+                return x
+        '''
+        self._run(self.change_spec, input_src, expected_src)
+
+        input_src = '''
+        import paddle
+
+        global_x = None
+
+        class SimpleImgConvPool():
+            def __init__(self):
+                self._conv2d = paddle.Conv2D(act="softmax")
+
+            @decorator
+            def forward(self):
+                x = self._conv2d(global_x)
+                return x
+        '''
+        expected_src = '''
+        import paddle
+
+        global_x = None
+
+        class SimpleImgConvPool():
+            def __init__(self):
+                self._conv2d = paddle.Conv2D()
+
+            @decorator
+            def forward(self):
+                x = self._conv2d(global_x)
+                x = paddle.nn.functional.softmax(x)
+                return x
+        '''
+        self._run(self.change_spec, input_src, expected_src)
+
 
 if __name__ == '__main__':
     unittest.main()
