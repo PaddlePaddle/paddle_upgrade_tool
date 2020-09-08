@@ -84,7 +84,7 @@ def _forward_act_transformer(filename, expr_node, layer_name, removed_value):
                 act = act.strip('"')
                 act = act.strip("'")
                 act = act.strip()
-                # create statement like "x = paddle.nn.function.act(x)"
+                # create statement like "x = paddle.nn.functional.act(x)"
                 code = left + ' = ' + 'paddle.nn.functional.' + act + '(' + left + ')'
                 _create_simple_stmt_node_and_insert_behind(code, node)
             # removed_value is a variable
@@ -93,8 +93,8 @@ def _forward_act_transformer(filename, expr_node, layer_name, removed_value):
                 act_var_name = "self._" + removed_value
                 code = act_var_name + " = " + removed_value
                 _create_simple_stmt_node_and_insert_behind(code, expr_node.parent)
-                # create statement like "x = getattr(paddle.nn.function, act)(x) if act else x"
-                code = left + " = getattr(paddle.nn.function, " + act_var_name + ")(" + left + ") if " + act_var_name + " else " + left
+                # create statement like "x = getattr(paddle.nn.functional, act)(x) if act else x"
+                code = left + " = getattr(paddle.nn.functional, " + act_var_name + ")(" + left + ") if " + act_var_name + " else " + left
                 _create_simple_stmt_node_and_insert_behind(code, node)
                 log_warning(filename, expr_node.get_lineno(), 'variable "{}" may not be visible here.'.format(removed_value))
 
@@ -110,13 +110,13 @@ def _function_act_transformer(filename, expr_node, removed_value):
             act = act.strip('"')
             act = act.strip("'")
             act = act.strip()
-            # create statement like "x = paddle.nn.function.act(x)"
+            # create statement like "x = paddle.nn.functional.act(x)"
             code = left + ' = ' + 'paddle.nn.functional.' + act + '(' + left + ')'
             _create_simple_stmt_node_and_insert_behind(code, simple_stmt_node)
         # removed_value is a variable
         else:
-            # create statement like "x = getattr(paddle.nn.function, act)(x) if act else x"
-            code = left + " = getattr(paddle.nn.function, " + removed_value + ")(" + left + ") if " + removed_value + " else " + left
+            # create statement like "x = getattr(paddle.nn.functional, act)(x) if act else x"
+            code = left + " = getattr(paddle.nn.functional, " + removed_value + ")(" + left + ") if " + removed_value + " else " + left
             _create_simple_stmt_node_and_insert_behind(code, simple_stmt_node)
 
 

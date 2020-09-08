@@ -490,14 +490,14 @@ class TestActTransformer(unittest.TestCase):
 
             def forward(self, x):
                 x = self._conv2d_1(x)
-                x = getattr(paddle.nn.function, self._act)(x) if self._act else x
+                x = getattr(paddle.nn.functional, self._act)(x) if self._act else x
                 x = self._conv2d_2(x)
                 x = paddle.nn.functional.relu(x)
                 x = self._conv2d_3(x)
                 x = paddle.elementwise_add(x)
                 x = paddle.nn.functional.softmax(x)
                 x = paddle.elementwise_add(x)
-                x = getattr(paddle.nn.function, visible_act)(x) if visible_act else x
+                x = getattr(paddle.nn.functional, visible_act)(x) if visible_act else x
                 return x
         '''
         self._run(self.change_spec, input_src, expected_src)
