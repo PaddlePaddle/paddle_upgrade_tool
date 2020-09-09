@@ -85,13 +85,14 @@ class BowlerTool(RefactoringTool):
         self,
         fixers,
         *args,
-        interactive = True,
+        need_confirm = True,
         write = False,
         silent = False,
         in_process = False,
         hunk_processor = None,
         filename_matcher = None,
         **kwargs):
+        self.backup = kwargs.pop('backup', None)
         options = kwargs.pop("options", {})
         options["print_function"] = True
         super().__init__(fixers, *args, options=options, **kwargs)
@@ -99,7 +100,7 @@ class BowlerTool(RefactoringTool):
         self.queue = multiprocessing.JoinableQueue()  # type: ignore
         self.results = multiprocessing.Queue()  # type: ignore
         self.semaphore = multiprocessing.Semaphore(self.NUM_PROCESSES)
-        self.interactive = interactive
+        self.need_confirm = need_confirm
         self.write = write
         self.silent = silent
         # pick the most restrictive of flags
@@ -267,8 +268,16 @@ class BowlerTool(RefactoringTool):
                 else:
                     self.log_debug("results: got {} hunks for {}".format(len(hunks), filename))
                     self.print_hunks(filename, hunks)
-                    if self.write:
-                        self.write_result(filename, new_text)
+                    if hunks and self.write:
+                        if self.need_confirm:
+                            if click.confirm(click.style('"{}" will be modified in-place, and it has been backed up to "{}". Do you want to continue?'.format(filename, self.backup), fg='red', bold=True)):
+                                self.write_result(filename, new_text)
+                                click.secho('"{}" refactor done! Recover your files from "{}" if anything is wrong.'.format(filename, self.backup))
+                            else:
+                                click.secho('"{}" refactor cancelled!'.format(filename), fg='red', bold=True)
+                        else:
+                            self.write_result(filename, new_text)
+                            click.secho('"{}" refactor done! Recover your files from "{}" if anything is wrong.'.format(filename, self.backup))
 
             except Empty:
                 if self.queue.empty() and results_count == self.queue_count:

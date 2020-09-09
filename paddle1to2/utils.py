@@ -284,6 +284,7 @@ def backup_inpath(inpath, backup):
         shutil.copy(inpath, dst_path)
     else:
         shutil.copytree(inpath, dst_path, ignore=_include_patterns("*.py"))
+    return dst_path
 
 def dec_indent(indent, count=1):
     """
