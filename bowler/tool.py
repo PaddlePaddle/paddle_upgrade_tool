@@ -14,7 +14,6 @@ from queue import Empty
 from typing import Any, Callable, Iterator, List, Optional, Sequence, Tuple
 
 from tools import click
-import sh
 from fissix.pgen2.parse import ParseError
 from fissix.refactor import RefactoringTool
 
@@ -173,7 +172,7 @@ class BowlerTool(RefactoringTool):
         except ParseError as e:
             log.exception("Skipping {filename}: failed to parse ({e})")
 
-        return hunks
+        return hunks, str(tree)
 
     def refactor_dir(self, dir_name, *a, **k):
         """Descends down a directory and refactor every Python file found.
@@ -205,18 +204,18 @@ class BowlerTool(RefactoringTool):
                 break
 
             try:
-                hunks = self.refactor_file(filename)
-                self.results.put((filename, hunks, None))
+                hunks, new_text = self.refactor_file(filename)
+                self.results.put((filename, hunks, None, new_text))
 
             except RetryFile:
                 self.log_debug("Retrying {} later...".format(filename))
                 self.queue.put(filename)
             except BowlerException as e:
                 log.exception("Bowler exception during transform of {}: {}".format(filename, e))
-                self.results.put((filename, e.hunks, e))
+                self.results.put((filename, e.hunks, e, None))
             except Exception as e:
                 log.exception("Skipping {}: failed to transform because {}".format(filename, e))
-                self.results.put((filename, [], e))
+                self.results.put((filename, [], e, None))
 
             finally:
                 self.queue.task_done()
@@ -252,7 +251,7 @@ class BowlerTool(RefactoringTool):
 
         while True:
             try:
-                filename, hunks, exc = self.results.get_nowait()
+                filename, hunks, exc, new_text = self.results.get_nowait()
                 results_count += 1
 
                 if exc:
@@ -267,7 +266,9 @@ class BowlerTool(RefactoringTool):
                     self.exceptions.append(exc)
                 else:
                     self.log_debug("results: got {} hunks for {}".format(len(hunks), filename))
-                    self.process_hunks(filename, hunks)
+                    self.print_hunks(filename, hunks)
+                    if self.write:
+                        self.write_result(filename, new_text)
 
             except Empty:
                 if self.queue.empty() and results_count == self.queue_count:
@@ -289,10 +290,9 @@ class BowlerTool(RefactoringTool):
 
         self.log_debug("all children stopped and all diff hunks processed")
 
-    def process_hunks(self, filename, hunks):
+    def print_hunks(self, filename, hunks):
         auto_yes = False
         result = ""
-        accepted_hunks = ""
         # print same filename header only once.
         hunks_header = set()
         for hunk in hunks:
@@ -320,51 +320,10 @@ class BowlerTool(RefactoringTool):
                     else:
                         click.echo(line)
 
-                if self.interactive:
-                    if auto_yes:
-                        click.echo("Applying remaining hunks to {}".format(filename))
-                        result = "y"
-                    else:
-                        result = prompt_user("Apply this hunk", "ynqad", "n")
-
-                    self.log_debug("result = {}".format(result))
-
-                    if result == "q":
-                        self.apply_hunks(accepted_hunks, filename)
-                        raise BowlerQuit()
-                    elif result == "d":
-                        self.apply_hunks(accepted_hunks, filename)
-                        return  # skip all remaining hunks
-                    elif result == "n":
-                        continue
-                    elif result == "a":
-                        auto_yes = True
-                        result = "y"
-                    elif result != "y":
-                        raise ValueError("unknown response")
-
-            if result == "y" or self.write:
-                accepted_hunks += "\n".join(hunk[2:]) + "\n"
-
-        self.apply_hunks(accepted_hunks, filename)
-
-    def apply_hunks(self, accepted_hunks, filename):
-        if accepted_hunks:
-            accepted_hunks = "--- {}\n+++ {}\n{}".format(filename, filename, accepted_hunks)
-            args = ["patch", "-u", filename]
-            self.log_debug("running {}".format(args))
-            try:
-                sh.patch(*args[1:], _in=accepted_hunks.encode("utf-8"))  # type: ignore
-            except sh.ErrorReturnCode as e:
-                if e.stderr:
-                    err = e.stderr.strip().decode("utf-8")
-                else:
-                    err = e.stdout.strip().decode("utf-8")
-                    if "saving rejects to file" in err:
-                        err = err.split("saving rejects to file")[1]
-                        log.exception("hunks failed to apply, rejects saved to{}".format(err))
-                        return
-                log.exception("failed to apply patch hunk: {}".format(err))
+    def write_result(self, filename, new_text):
+        if isinstance(new_text, str):
+            with open(filename, 'w') as f:
+                f.write(new_text)
 
     def run(self, paths):
         if not self.errors:
