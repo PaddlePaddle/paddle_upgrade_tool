@@ -70,10 +70,16 @@ def main():
         # backup args.inpath
         backup = backup_inpath(args.inpath, args.backup)
         # print diff to stdout, and modify file in place.
-        q.execute(write=True, silent=False, need_confirm=not args.no_confirm, backup=backup)
+        if utils.is_windows():
+            q.execute(write=True, silent=False, need_confirm=not args.no_confirm, backup=backup, in_process=True)
+        else:
+            q.execute(write=True, silent=False, need_confirm=not args.no_confirm, backup=backup)
     else:
         # print diff to stdout
-        q.execute(write=False, silent=False)
+        if utils.is_windows():
+            q.execute(write=False, silent=False, in_process=True)
+        else:
+            q.execute(write=False, silent=False)
         click.secho('Refactor finished without touching source files, add "--write" to modify source files in-place if everything is ok.', fg="red", bold=True)
 
 if __name__ == "__main__":

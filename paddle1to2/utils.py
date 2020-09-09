@@ -308,7 +308,7 @@ def get_indent(node):
         node = node.prev_sibling
     return ""
 
-def _is_windows():
+def is_windows():
     """
     check if current operating system is windows
     """
@@ -346,7 +346,7 @@ def valid_path(inpath):
         """
         refactor windows files on linux or mac os is not supported.
         """
-        if not _is_windows():
+        if not is_windows():
             if _is_windows_file(inpath):
                 logger.error('{} is a windows file, you can use "dos2unix" command to convert it to linux file.'.format(inpath))
                 valid = False
@@ -359,7 +359,7 @@ def valid_path(inpath):
                 if not filename.endswith('.py'):
                     continue
                 filepath = os.path.join(dirpath, filename)
-                if not _is_windows() and _is_windows_file(filepath):
+                if not is_windows() and _is_windows_file(filepath):
                     logger.error('{} is a windows file, you can use "dos2unix" command to convert it to linux file.'.format(filepath))
                     valid = False
                 if not _is_utf8(filepath):
