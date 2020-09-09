@@ -37,12 +37,16 @@ change_spec = {
 
 
 ### Install
+paddle1to2 support Linux, Mac OS, Windows([Git Bash](https://gitforwindows.org/) is recommended). Multi-Process is supported for Linux and Mac OS, Single-Process is support for Windows, this will lead to performance difference.
+
 1. install with pip
 
 ```bash
 pip install -U paddle1to2
 paddle1to2 --help # show help
 paddle1to2 --inpath /path/to/model.py # upgrade your model from paddle-1.x to paddle-2.0
+# or
+python -m paddle1to2 --inpath /path/to/model.py
 ```
 
 2. install from source
