@@ -13,7 +13,7 @@ import time
 from queue import Empty
 from typing import Any, Callable, Iterator, List, Optional, Sequence, Tuple
 
-import click
+from tools import click
 import sh
 from fissix.pgen2.parse import ParseError
 from fissix.refactor import RefactoringTool

@@ -8,7 +8,7 @@
 import logging
 from typing import List, Optional, Sequence, Union
 
-import click
+from tools import click
 from fissix.pgen2.token import tok_name
 from fissix.pytree import Leaf, Node, type_repr
 

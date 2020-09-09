@@ -5,7 +5,7 @@ from __future__ import absolute_import
 import os
 import sys
 import argparse
-import click
+from tools import click
 
 from bowler import Query
 
