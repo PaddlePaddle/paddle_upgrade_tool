@@ -12,11 +12,11 @@ class ColorFormatter(logging.Formatter):
     def __init__(self, fmt=None, datefmt=None, style='%'):
         super().__init__(fmt, datefmt, style)
 
-        grey = "\x1b[38;21m"
-        yellow = "\x1b[33;21m"
-        red = "\x1b[31;21m"
-        bold_red = "\x1b[31;1m"
-        reset = "\x1b[0m"
+        grey = "\033[38m"
+        yellow = "\033[93m"
+        red = "\033[91m"
+        bold_red = "\033[91;1m"
+        reset = "\033[0m"
 
         self.FORMATS = {
             logging.DEBUG: grey + fmt + reset,
