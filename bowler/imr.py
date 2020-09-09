@@ -8,8 +8,6 @@
 import logging
 from typing import Any, List, Optional
 
-import attr
-from attr import dataclass
 from fissix.fixer_util import LParen, Name
 
 from .helpers import find_last
@@ -29,13 +27,13 @@ from .types import (
 log = logging.getLogger(__name__)
 
 
-@attr.s
 class FunctionArgument:
-    name = attr.ib(default="")
-    value = attr.ib(default=None)
-    annotation = attr.ib(default="")
-    star = attr.ib(None)
-    prefix = attr.ib(None)
+    def __init__(self, name="", value=None, annotation="", star=None, prefix=None):
+        self.name       = name
+        self.value      = value
+        self.annotation = annotation
+        self.star       = star
+        self.prefix     = prefix
 
     @classmethod
     def build(cls, leaf, is_def, **kwargs):
@@ -195,13 +193,13 @@ class FunctionArgument:
             return Node(SYMBOL.arglist, nodes, prefix=nodes[0].prefix)
 
 
-@attr.s
 class FunctionSpec:
-    name = attr.ib()
-    arguments = attr.ib()
-    is_def = attr.ib()
-    capture = attr.ib()
-    node = attr.ib()
+    def __init__(self, name, argument, is_def, capture, node):
+        self.name = name
+        self.arguments = arguments
+        self.is_def = is_def
+        self.capture = capture
+        self.node = node
 
     @classmethod
     def build(cls, node, capture):

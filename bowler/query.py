@@ -12,7 +12,6 @@ import re
 from functools import wraps
 from typing import Any, Callable, Dict, List, Optional, Type, TypeVar, Union, cast
 
-from attr import Factory, dataclass
 from fissix.fixer_base import BaseFix
 from fissix.fixer_util import Attr, Comma, Dot, LParen, Name, Newline, RParen
 from fissix.pytree import Leaf, Node, type_repr
@@ -76,7 +75,7 @@ def selector(pattern):
             if "name" in kwargs:
                 kwargs["dotted_name"] = " ".join(quoted_parts(kwargs["name"]))
                 kwargs["power_name"] = " ".join(power_parts(kwargs["name"]))
-            self.transforms.append(Transform(selector, kwargs))
+            self.transforms.append(Transform(selector=selector, kwargs=kwargs))
             return self
 
         return wrapped
