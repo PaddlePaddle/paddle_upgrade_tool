@@ -39,7 +39,7 @@ script:
     python3 -m unittest discover paddle1to2/tests/
     python3 setup.py sdist bdist_wheel
     pip3 install dist/paddle1to2*.whl
-    cd /
+    rm -rf ./*
     python3 -m unittest discover paddle1to2.tests.test_refactor
     paddle1to2 -h
   )
