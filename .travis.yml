@@ -59,7 +59,7 @@ script:
     cd ..
     python -m unittest discover paddle1to2.tests.test_refactor
     paddle1to2 -h
-    pip3 install pytest pytest-cov coveralls
+    pip3 install pytest-cov coveralls
     pytest --cov=paddle1to2
   )
 
