@@ -2,20 +2,30 @@ branches:
   only:
   - master
 language: python
+os:
+  - linux
+  - osx
+  - windows
+python:
+  - "3.5"
+  - "3.6"
+  - "3.7"
+  - "3.8"
+
 jobs:
-  include:
-  - os: linux
-    python:
-      - "3.5"
-      - "3.6"
-      - "3.7"
-      - "3.8"
+  exclude:
   - os: osx
-    python:
-      - "3.5"
+    python: "3.6"
+  - os: osx
+    python: "3.7"
+  - os: osx
+    python: "3.8"
   - os: windows
-    python:
-      - "3.5"
+    python: "3.6"
+  - os: windows
+    python: "3.7"
+  - os: windows
+    python: "3.8"
 
 before_script:
 - echo "this is before_script"
@@ -29,6 +39,9 @@ script:
     python -m unittest discover paddle1to2/tests/
     python setup.py sdist bdist_wheel
     pip install dist/paddle1to2*.whl
+    cd /
+    python -m unittest discover paddle1to2.tests.test_refactor
+    paddle1to2 -h
   )
 
 after_script:
