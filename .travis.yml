@@ -25,6 +25,7 @@ jobs:
       before_install:
         - choco install python --version 3.5.4
         - python -m pip install --upgrade pip
+        - pip3 install wheel
       env: PATH=/c/Python35:/c/Python35/Scripts:$PATH
 
 before_script:
