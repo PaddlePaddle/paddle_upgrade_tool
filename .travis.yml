@@ -23,8 +23,9 @@ jobs:
         - python3 -m unittest discover paddle1to2/tests/ 
         - python3 setup.py sdist bdist_wheel
         - pip3 install dist/paddle1to2*.whl
-        - rm -rf ./*
+        - cd ..
         - python3 -m unittest discover paddle1to2.tests.test_refactor
+      after_success: ""
     - name: "python: 3.5 on Windows"
       os: windows
       language: shell
@@ -32,6 +33,13 @@ jobs:
         - choco install python --version 3.5.4
         - python -m pip install --upgrade pip
         - pip3 install wheel
+      script:
+        - python -m unittest discover paddle1to2/tests/
+        - python setup.py sdist bdist_wheel
+        - pip3 install dist/paddle1to2*.whl
+        - cd ..
+        - python -m unittest discover paddle1to2.tests.test_refactor
+      after_success: ""
       env: PATH=/c/Python35:/c/Python35/Scripts:$PATH
 
 before_install:
@@ -48,13 +56,16 @@ script:
     python -m unittest discover paddle1to2/tests/
     python setup.py sdist bdist_wheel
     pip3 install dist/paddle1to2*.whl
-    cd /
+    cd ..
     python -m unittest discover paddle1to2.tests.test_refactor
+    paddle1to2 -h
+    pip3 install pytest pytest-cov coveralls
+    pytest --cov=paddle1to2
   )
 
 after_script:
 - echo "this is after_script"
-- paddle1to2 -h
 
 after_success:
 - echo "this is after_success"
+- coveralls
