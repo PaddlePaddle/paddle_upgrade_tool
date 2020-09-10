@@ -1,7 +1,7 @@
 Upgrade your python model from paddle-1.x to paddle-2.
 
 ### Attention
-`paddle1to2` aims to convert python files from paddle-1.x to paddle-2 one by one, it won't handle indirect imports. e.g.`
+`paddle1to2` aims to convert python files from paddle-1.x to paddle-2 one by one, it won't handle indirect imports. e.g.
 
 ```python
 # filename "a.py"
