@@ -93,6 +93,7 @@ class BowlerTool(RefactoringTool):
         filename_matcher = None,
         **kwargs):
         self.backup = kwargs.pop('backup', None)
+        self.print_hint = kwargs.pop('print_hint', True)
         options = kwargs.pop("options", {})
         options["print_function"] = True
         super().__init__(fixers, *args, options=options, **kwargs)
@@ -272,12 +273,15 @@ class BowlerTool(RefactoringTool):
                         if self.need_confirm:
                             if click.confirm(click.style('"{}" will be modified in-place, and it has been backed up to "{}". Do you want to continue?'.format(filename, self.backup), fg='red', bold=True)):
                                 self.write_result(filename, new_text)
-                                click.secho('"{}" refactor done! Recover your files from "{}" if anything is wrong.'.format(filename, self.backup))
+                                if self.print_hint:
+                                    click.secho('"{}" refactor done! Recover your files from "{}" if anything is wrong.'.format(filename, self.backup))
                             else:
-                                click.secho('"{}" refactor cancelled!'.format(filename), fg='red', bold=True)
+                                if self.print_hint:
+                                    click.secho('"{}" refactor cancelled!'.format(filename), fg='red', bold=True)
                         else:
                             self.write_result(filename, new_text)
-                            click.secho('"{}" refactor done! Recover your files from "{}" if anything is wrong.'.format(filename, self.backup))
+                            if self.print_hint:
+                                click.secho('"{}" refactor done! Recover your files from "{}" if anything is wrong.'.format(filename, self.backup))
 
             except Empty:
                 if self.queue.empty() and results_count == self.queue_count:
