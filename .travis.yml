@@ -12,14 +12,14 @@ python:
 
 jobs:
   include:
-    - name: "python 3.5 on macOS"
+    - name: "python: 3.5 on macOS"
       os: osx
       osx_image: xcode11
       language: shell
       env: PYTHON=35
       before_script:
         - alias python="python3"
-    - name: "python3.5 on Windows"
+    - name: "python: 3.5 on Windows"
       os: windows
       language: shell
       before_install:

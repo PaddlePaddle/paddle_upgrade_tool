@@ -6,14 +6,18 @@ from tempfile import NamedTemporaryFile
 
 from bowler import Query
 from paddle1to2.refactor import *
+from paddle1to2 import utils
 
-def _refactor_helper(refactor_func, input_src, change_spec) -> str:
+def _refactor_helper(refactor_func, input_src, change_spec):
     try:
         ntf = NamedTemporaryFile(suffix='.py', delete=False)
         ntf.write(input_src.encode('utf-8'))
         ntf.close()
         q = Query(ntf.name)
-        refactor_func(q, change_spec).execute(write=True, silent=True, need_confirm=False, print_hint=False)
+        if utils.is_windows():
+            refactor_func(q, change_spec).execute(write=True, silent=True, need_confirm=False, print_hint=False, in_process=True)
+        else:
+            refactor_func(q, change_spec).execute(write=True, silent=True, need_confirm=False, print_hint=False)
         with open(ntf.name, 'r') as f:
             output_src = f.read()
         return output_src
