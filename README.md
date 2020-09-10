@@ -1,8 +1,9 @@
 Upgrade your python model from paddle-1.x to paddle-2.
 
 [![Build Status](https://travis-ci.org/PaddlePaddle/paddle1to2.svg?branch=master)](https://travis-ci.org/PaddlePaddle/paddle1to2)
-[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
+[![Coverage Status](https://coveralls.io/repos/github/PaddlePaddle/paddle1to2/badge.svg?branch=master)](https://coveralls.io/github/PaddlePaddle/paddle1to2?branch=master)
 [![Version](https://img.shields.io/pypi/v/paddle1to2)](https://pypi.org/project/paddle1to2)
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
 ### Attention
 `paddle1to2` aims to convert python files from paddle-1.x to paddle-2 one by one, it won't handle indirect imports. e.g.
