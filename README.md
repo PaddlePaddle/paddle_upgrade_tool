@@ -1,4 +1,21 @@
-Upgrade your python model from paddle-1.x to paddle-2.0
+Upgrade your python model from paddle-1.x to paddle-2.
+
+### Attention
+`paddle1to2` aims to convert python files from paddle-1.x to paddle-2 one by one, it won't handle indirect imports. e.g.`
+
+```python
+# filename "a.py"
+import paddle.fluid as fluid
+pass
+
+# filename "b.py"
+from a import *
+class MyLayer(fluid.layers.Layer):
+    pass
+```
+
+`fluid.layers.Layer` in "b.py" won't get converted.
+**So you have to make sure you have import all used paddle modules, classes, objects directly for every python file before running `paddle1to2`.**
 
 ### Change Spec
 `change_spec` is a python dict defined in spec.py, it defines the rules to refactor your code.

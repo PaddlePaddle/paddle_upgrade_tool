@@ -14,7 +14,7 @@ setup(
     author='T8T9, PaddlePaddle',
     author_email='taoshibo@baidu.com',
     keywords=('paddle1to2', 'paddle', 'paddlepaddle'),
-    url='https://github.com/T8T9/paddle1to2',
+    url='https://github.com/PaddlePaddle/paddle1to2',
     packages = find_packages(),
     package_data={'fissix': ['*.txt']},
     test_suite="paddle1to2.tests",
