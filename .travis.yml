@@ -32,19 +32,16 @@ before_script:
 - echo "this is before_script"
 
 script:
-- |
-  (
-    echo "this is script"
-    python --version
-    set -Eeuo pipefail
-    set -x
-    python -m unittest discover paddle1to2/tests/
-    python setup.py sdist bdist_wheel
-    pip install dist/paddle1to2*.whl
-    cd /
-    python -m unittest discover paddle1to2.tests.test_refactor
-    paddle1to2 -h
-  )
+- echo "this is script"
+- python --version
+- set -Eeuo pipefail
+- set -x
+- python -m unittest discover paddle1to2/tests/
+- python setup.py sdist bdist_wheel
+- pip install dist/paddle1to2*.whl
+- cd /
+- python -m unittest discover paddle1to2.tests.test_refactor
+- paddle1to2 -h
 
 after_script:
 - echo "this is after_script"
