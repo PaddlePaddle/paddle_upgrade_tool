@@ -35,12 +35,12 @@ script:
   (
     set -Eeuo pipefail
     set -x
-    python3 --version || python --version
-    python3 -m unittest discover paddle1to2/tests/ || python -m unittest discover paddle1to2/tests/
-    python3 setup.py sdist bdist_wheel || python setup.py sdist bdist_wheel
-    pip install dist/paddle1to2*.whl
+    python3 --version
+    python3 -m unittest discover paddle1to2/tests/
+    python3 setup.py sdist bdist_wheel
+    pip3 install dist/paddle1to2*.whl
     cd /
-    python3 -m unittest discover paddle1to2.tests.test_refactor || python -m unittest discover paddle1to2.tests.test_refactor
+    python3 -m unittest discover paddle1to2.tests.test_refactor
     paddle1to2 -h
   )
 
