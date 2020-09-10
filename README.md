@@ -1,4 +1,5 @@
 Upgrade your python model from paddle-1.x to paddle-2.
+[![Build Status](https://travis-ci.org/PaddlePaddle/paddle1to2.svg?branch=master)](https://travis-ci.org/PaddlePaddle/paddle1to2)
 
 ### Attention
 `paddle1to2` aims to convert python files from paddle-1.x to paddle-2 one by one, it won't handle indirect imports. e.g.
