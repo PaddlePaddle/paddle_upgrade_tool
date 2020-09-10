@@ -17,8 +17,6 @@ jobs:
       osx_image: xcode11
       language: shell
       env: PYTHON=35
-      before_script:
-        - alias python="python3"
     - name: "python: 3.5 on Windows"
       os: windows
       language: shell
@@ -33,13 +31,18 @@ before_script:
 
 script:
 - echo "this is script"
-- python --version
-- python -m unittest discover paddle1to2/tests/
-- python setup.py sdist bdist_wheel
-- pip install dist/paddle1to2*.whl
-- cd /
-- python -m unittest discover paddle1to2.tests.test_refactor
-- paddle1to2 -h
+- |
+  (
+    set -Eeuo pipefail
+    set -x
+    python3 --version || python --version
+    python3 -m unittest discover paddle1to2/tests/ || python -m unittest discover paddle1to2/tests/
+    python3 setup.py sdist bdist_wheel || python setup.py sdist bdist_wheel
+    pip install dist/paddle1to2*.whl
+    cd /
+    python3 -m unittest discover paddle1to2.tests.test_refactor || python -m unittest discover paddle1to2.tests.test_refactor
+    paddle1to2 -h
+  )
 
 after_script:
 - echo "this is after_script"
