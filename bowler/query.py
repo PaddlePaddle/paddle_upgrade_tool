@@ -998,11 +998,11 @@ class Query:
                 transform.callbacks.append(print_selector_pattern)
         return self.execute(write=False)
 
-    def diff(self, interactive = False, **kwargs):
-        return self.execute(write=False, interactive=interactive, **kwargs)
+    def diff(self, **kwargs):
+        return self.execute(write=False, **kwargs)
 
     def idiff(self, **kwargs):
-        return self.diff(interactive=True, **kwargs)
+        return self.diff(**kwargs)
 
     def silent(self, **kwargs):
         return self.execute(silent=True, **kwargs)
