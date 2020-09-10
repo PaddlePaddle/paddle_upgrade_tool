@@ -1,0 +1,38 @@
+branches:
+  only:
+  - master
+language: python
+jobs:
+  include:
+  - os: linux
+    python:
+      - "3.5"
+      - "3.6"
+      - "3.7"
+      - "3.8"
+  - os: osx
+    python:
+      - "3.5"
+  - os: windows
+    python:
+      - "3.5"
+
+before_script:
+- echo "this is before_script"
+
+script:
+- |
+  (
+    echo "this is script"
+    set -Eeuo pipefail
+    set -x
+    python -m unittest discover paddle1to2/tests/
+    python setup.py sdist bdist_wheel
+    pip install dist/paddle1to2*.whl
+  )
+
+after_script:
+- echo "this is after_script"
+
+after_success:
+- echo "this is after_success"
