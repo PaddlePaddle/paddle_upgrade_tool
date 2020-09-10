@@ -61,7 +61,6 @@ script:
     paddle1to2 -h
     pip3 install pytest-cov coveralls
     pytest --cov=paddle1to2
-    pwd
   )
 
 after_script:
@@ -69,5 +68,5 @@ after_script:
 
 after_success:
 - echo "this is after_success"
-- pwd
+- cd ..
 - coveralls
