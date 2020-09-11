@@ -51,13 +51,13 @@ def style(
 
     if fg:
         try:
-            bits.append("\033[{}m".format(_interpret_color(fg)))
+            bits.append("\033[0;{}m".format(_interpret_color(fg)))
         except KeyError:
             raise TypeError("Unknown color {}".format(fg))
 
     if bg:
         try:
-            bits.append("\033[{}m".format(_interpret_color(bg, 10)))
+            bits.append("\033[0;{}m".format(_interpret_color(bg, 10)))
         except KeyError:
             raise TypeError("Unknown color {}".format(fg))
 
