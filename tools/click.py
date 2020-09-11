@@ -47,6 +47,9 @@ def style(
     if not isinstance(text, str):
         text = str(text)
 
+    if sys.platform.lower() == 'win32':
+        return text
+
     bits = []
 
     if fg:

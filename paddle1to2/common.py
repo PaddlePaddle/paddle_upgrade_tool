@@ -27,7 +27,10 @@ class ColorFormatter(logging.Formatter):
         }
 
     def format(self, record):
-        log_fmt = self.FORMATS.get(record.levelno)
+        log_fmt = None
+        # if not windows, add color info
+        if sys.platform.lower() != 'win32':
+            log_fmt = self.FORMATS.get(record.levelno)
         if log_fmt is None:
             log_fmt = self.fmt
         formatter = logging.Formatter(log_fmt)
