@@ -60,6 +60,7 @@ script:
     python -m unittest discover paddle1to2.tests.test_refactor
     paddle1to2 -h
     pip3 install pytest-cov coveralls
+    cd paddle1to2
     pytest --cov=paddle1to2
   )
 
@@ -68,5 +69,4 @@ after_script:
 
 after_success:
 - echo "this is after_success"
-- cd ..
 - coveralls
