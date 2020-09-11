@@ -132,7 +132,7 @@ def _function_act_transformer(filename, expr_node, removed_value):
 def _create_simple_stmt_node_and_insert_behind(code, node):
     if node is None or node.type != python_symbols.simple_stmt:
         return
-    simple_stmt_node = Node(python_symbols.simple_stmt, [Newline()])
+    simple_stmt_node = Node(python_symbols.simple_stmt, [utils.newline_node(node)])
     _node = utils.code_repr(code).children[0].children[0]
     _node.parent = None
     simple_stmt_node.insert_child(0, _node)

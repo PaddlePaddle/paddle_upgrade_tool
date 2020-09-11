@@ -174,7 +174,7 @@ class BowlerTool(RefactoringTool):
         except ParseError as e:
             log.exception("Skipping {filename}: failed to parse ({e})")
 
-        return hunks, str(tree)
+        return hunks, str(tree).encode(encoding)
 
     def refactor_dir(self, dir_name, *a, **k):
         """Descends down a directory and refactor every Python file found.
@@ -334,8 +334,8 @@ class BowlerTool(RefactoringTool):
                         click.echo(line)
 
     def write_result(self, filename, new_text):
-        if isinstance(new_text, str):
-            with open(filename, 'w') as f:
+        if isinstance(new_text, bytes):
+            with open(filename, 'wb') as f:
                 f.write(new_text)
 
     def run(self, paths):

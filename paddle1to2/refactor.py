@@ -452,14 +452,14 @@ def refactor_with(q:Query, change_spec):
 
         # create simple_stmt node for "paddle.disable_static"
         arg_list_nodes = capture['arg_list']
-        simple_stmt_disable_static = Node(python_symbols.simple_stmt, [Newline()])
+        simple_stmt_disable_static = Node(python_symbols.simple_stmt, [utils.newline_node(node)])
         _node = utils.code_repr('paddle.disable_static' + str(arg_list_nodes)).children[0].children[0]
         _node.parent = None
         simple_stmt_disable_static.insert_child(0, _node)
         simple_stmt_disable_static.prefix = with_node.prefix
 
         # create simple_stmt node for "paddle.enable_static"
-        simple_stmt_enable_static = Node(python_symbols.simple_stmt, [Newline()])
+        simple_stmt_enable_static = Node(python_symbols.simple_stmt, [utils.newline_node(node)])
         simple_stmt_enable_static
         _node = utils.code_repr('paddle.enable_static()').children[0].children[0]
         _node.parent = None

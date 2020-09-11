@@ -72,9 +72,9 @@ def Call(func_name, args=None, prefix=None):
     return node
 
 
-def Newline():
+def Newline(value="\n"):
     """A newline literal"""
-    return Leaf(token.NEWLINE, "\n")
+    return Leaf(token.NEWLINE, value)
 
 
 def BlankLine():

@@ -10,7 +10,7 @@ from fissix import pytree
 from fissix.pygram import python_grammar, python_symbols
 from fissix.pgen2 import token
 from fissix.pytree import Leaf, Node
-from fissix.fixer_util import Attr, Comma, Dot, LParen, Name, Newline, RParen, KeywordArg, Number, ArgList, Newline
+from fissix.fixer_util import Attr, Comma, Dot, LParen, Name, Newline, RParen, KeywordArg, Number, ArgList
 
 from paddle1to2.common import logger
 
@@ -397,3 +397,27 @@ def insert_node_behind(node1, nodes):
                 if node is not None:
                     node1.parent.insert_child(idx, node)
                     idx += 1
+
+_newline_node = None
+def newline_node(node):
+    """
+    Find a NEWLINE node from AST tree, and clone it to create a new NEWLINE node.
+    So we don't need to care about os platform.
+    if no NEWLINE node found in AST tree, create a new NEWLINE node according to os platform.
+    """
+    global _newline_node
+    if _newline_node is None:
+        p = node
+        while p is not None and p.parent is not None:
+            p = p.parent
+        if p is not None:
+            for leaf in p.leaves():
+                if leaf.type == token.NEWLINE:
+                    _newline_node = leaf
+                    break
+        if _newline_node is None:
+            if is_windows:
+                _newline_node = Newline(value="\r\n")
+            else:
+                _newline_node = Newline()
+    return _newline_node.clone()
