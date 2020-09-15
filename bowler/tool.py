@@ -97,11 +97,17 @@ class BowlerTool(RefactoringTool):
         options = kwargs.pop("options", {})
         options["print_function"] = True
         super().__init__(fixers, *args, options=options, **kwargs)
+        self.need_confirm = need_confirm
         self.queue_count = 0
         self.queue = multiprocessing.JoinableQueue()  # type: ignore
-        self.results = multiprocessing.Queue()  # type: ignore
+        # if need_confirm, refactor files in one process one by one to avoid log disorder.
+        if self.need_confirm:
+            self.results = multiprocessing.Queue(maxsize=1)  # type: ignore
+            self.NUM_PROCESSES = 1
+            self.semaphore_confirm = multiprocessing.Semaphore(1)
+        else:
+            self.results = multiprocessing.Queue()  # type: ignore
         self.semaphore = multiprocessing.Semaphore(self.NUM_PROCESSES)
-        self.need_confirm = need_confirm
         self.write = write
         self.silent = silent
         # pick the most restrictive of flags
@@ -206,6 +212,8 @@ class BowlerTool(RefactoringTool):
                 break
 
             try:
+                if self.need_confirm:
+                    self.semaphore_confirm.acquire()
                 hunks, new_text = self.refactor_file(filename)
                 self.results.put((filename, hunks, None, new_text))
 
@@ -282,6 +290,8 @@ class BowlerTool(RefactoringTool):
                             self.write_result(filename, new_text)
                             if self.print_hint:
                                 click.secho('"{}" refactor done! Recover your files from "{}" if anything is wrong.'.format(filename, self.backup))
+                if self.need_confirm:
+                    self.semaphore_confirm.release()
 
             except Empty:
                 if self.queue.empty() and results_count == self.queue_count:
