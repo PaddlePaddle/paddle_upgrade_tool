@@ -143,7 +143,7 @@ def add_argument(filename, trailer_node, key, value):
                 _value_node_copy.type = token.NAME
                 _value_node_copy.value = value
                 _value_node.replace(_value_node_copy)
-                log_warning(filename, arglist_node.get_lineno(), 'argument "{}" is reassigned to "{}"'.format(key, value))
+                log_warning(filename, trailer_node.get_lineno(), 'argument "{}" is reassigned to "{}"'.format(key, value))
             break
     if not found_key:
         key_node = Name(key)
@@ -153,7 +153,7 @@ def add_argument(filename, trailer_node, key, value):
             key_node.prefix = " "
         arg_node = KeywordArg(key_node, value_node)
         arglist_node.append_child(arg_node)
-        log_warning(filename, arglist_node.get_lineno(), 'add argument "{}={}"'.format(key, value))
+        log_warning(filename, trailer_node.get_lineno(), 'add argument "{}={}"'.format(key, value))
 
 
 def remove_argument(filename, trailer_node, key):
@@ -175,17 +175,16 @@ def remove_argument(filename, trailer_node, key):
         _key_node = node.children[0]
         if _key_node.value == key:
             found_key = True
-            removed_value = node.children[2].value if len(node.children) >= 3 else None
+            removed_value = node2code(node.children[2]) if len(node.children) >= 3 else None
             if node.prev_sibling is not None and node.prev_sibling.type is token.COMMA:
                 node.prev_sibling.remove()
             elif node.next_sibling is not None and node.next_sibling.type is token.COMMA:
                 node.next_sibling.remove()
-            lineno = arglist_node.get_lineno()
             node.remove()
-            log_warning(filename, lineno, 'argument "{}" is removed.'.format(key))
+            log_warning(filename, trailer_node.get_lineno(), 'argument "{}" is removed.'.format(key))
             break
     if not found_key:
-        log_info(filename, arglist_node.get_lineno(), 'argument "{}" not found.'.format(key))
+        log_info(filename, trailer_node.get_lineno(), 'argument "{}" not found.'.format(key))
     return removed_value
 
 
@@ -208,10 +207,10 @@ def rename_argument(filename, trailer_node, old_key, new_key):
         if _key_node.value == old_key:
             found_key = True
             _key_node.value = new_key
-            log_warning(filename, arglist_node.get_lineno(), 'rename argument "{}" to "{}".'.format(old_key, new_key))
+            log_warning(filename, trailer_node.get_lineno(), 'rename argument "{}" to "{}".'.format(old_key, new_key))
             break
     if not found_key:
-        log_info(filename, arglist_node.get_lineno(), 'argument "{}" not found.'.format(old_key))
+        log_info(filename, trailer_node.get_lineno(), 'argument "{}" not found.'.format(old_key))
 
 
 def apply_argument(filename, trailer_node, fun):
