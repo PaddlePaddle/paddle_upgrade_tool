@@ -117,7 +117,19 @@ class TestRefactorImport(unittest.TestCase):
         print(type(paddle.fluid.layers.Layer))
         '''
         self._run({}, input_src, expected_src)
-
+        #--------------
+        input_src = '''
+        import paddle
+        import paddle.fluid as fluid
+        fluid.api()
+        func(fluid=1)
+        '''
+        expected_src = '''
+        import paddle
+        paddle.fluid.api()
+        func(fluid=1)
+        '''
+        self._run({}, input_src, expected_src)
 
 class TestNormApiAlias(unittest.TestCase):
     change_spec = {
