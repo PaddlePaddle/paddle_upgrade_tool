@@ -22,7 +22,7 @@ setup(
     long_description=LONG_DESCRIPTION,
     long_description_content_type="text/markdown",
     license="Apache License 2.0",
-    python_requires=">=3.5",
+    python_requires=">=3.5.4",
     setup_requires=['wheel'],
     scripts=[],
     entry_points={
