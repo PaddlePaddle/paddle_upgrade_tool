@@ -137,11 +137,11 @@ def refactor_import(q: Query, change_spec):
         logger.debug("{} [{}]: {}".format(filename, list(capture), node))
 
         # skip import statement
-        p = node.parent
-        while p is not None:
-            if p.type in {python_symbols.import_name, python_symbols.import_from}:
-                return
-            p = p.parent
+        if utils.is_import_node(node):
+            return
+        # skip left operand in argument list
+        if utils.is_argument_node(node) and utils.is_left_operand(node):
+            return
         # skip if it's already a full module path
         if node.prev_sibling is not None and node.prev_sibling.type == token.DOT:
             return

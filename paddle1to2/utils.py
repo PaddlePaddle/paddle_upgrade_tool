@@ -420,3 +420,33 @@ def newline_node(node):
             else:
                 _newline_node = Newline()
     return _newline_node.clone()
+
+def is_import_node(node):
+    """
+    check if a node is an import node
+    """
+    p = node
+    while p is not None:
+        if p.type in {python_symbols.import_name, python_symbols.import_from}:
+            return True
+        p = p.parent
+    return False
+
+def is_argument_node(node):
+    """
+    check if a node is a argument node
+    """
+    p = node
+    while p is not None:
+        if p.type == python_symbols.argument:
+            return True
+        p = p.parent
+    return False
+
+def is_left_operand(node):
+    """
+    check if a node is left operand
+    """
+    if node is not None and node.next_sibling is not None and node.next_sibling.type is token.EQUAL:
+        return True
+    return False
