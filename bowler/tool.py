@@ -85,7 +85,8 @@ class BowlerTool(RefactoringTool):
         self,
         fixers,
         *args,
-        need_confirm = True,
+        need_confirm = False,
+        parallel = None,
         write = False,
         silent = False,
         in_process = False,
@@ -98,6 +99,7 @@ class BowlerTool(RefactoringTool):
         options["print_function"] = True
         super().__init__(fixers, *args, options=options, **kwargs)
         self.need_confirm = need_confirm
+        self.parallel = parallel
         self.queue_count = 0
         self.queue = multiprocessing.JoinableQueue()  # type: ignore
         # if need_confirm, refactor files in one process one by one to avoid log disorder.
@@ -105,7 +107,10 @@ class BowlerTool(RefactoringTool):
             self.results = multiprocessing.Queue(maxsize=1)  # type: ignore
             self.NUM_PROCESSES = 1
             self.semaphore_confirm = multiprocessing.Semaphore(1)
+            self.parallel = None
         else:
+            if self.parallel is not None:
+                self.NUM_PROCESSES = max(1, min(self.parallel, 100))
             self.results = multiprocessing.Queue()  # type: ignore
         self.semaphore = multiprocessing.Semaphore(self.NUM_PROCESSES)
         self.write = write

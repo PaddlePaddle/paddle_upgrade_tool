@@ -29,11 +29,12 @@ def main():
     parser.add_argument("--log-level", dest="log_level", type=str, choices=["DEBUG", "INFO", "WARNING", "ERROR"], help="set log level, default is INFO")
     parser.add_argument("--no-log-file", dest="no_log_file", action='store_true', default=False, help="don't log to file")
     parser.add_argument("--log-filepath", dest="log_filepath", type=str, help='set log file path, default is "report.log"')
-    parser.add_argument("--inpath", required=True, type=str, help='the file or directory path you want to upgrade.')
-    parser.add_argument("--backup", type=str, nargs='?', default=None, const=None, help='backup directory, default is the "~/.paddle1to2/".')
-    parser.add_argument("--write", action='store_true', default=False, help='modify files in-place.')
+    parser.add_argument("-i", "--inpath", required=True, type=str, help='the file or directory path you want to upgrade.')
+    parser.add_argument("-b", "--backup", type=str, nargs='?', default=None, const=None, help='backup directory, default is the "~/.paddle1to2/".')
+    parser.add_argument("-w", "--write", action='store_true', default=False, help='modify files in-place.')
     parser.add_argument("--no-confirm", dest="no_confirm", action='store_true', default=False, help='write files in-place without confirm, ignored without --write.')
-    parser.add_argument("--refactor", action='append', choices=refactor.__all__, help='this is a debug option. Specify refactor you want to run. If none, all refactors will be run.')
+    parser.add_argument("-p", "--parallel", type=int, default=None, help='specify the maximum number of concurrent processes to use when refactoring, ignored with --no-confirm.')
+    parser.add_argument("-r", "--refactor", action='append', choices=refactor.__all__, help='this is a debug option. Specify refactor you want to run. If none, all refactors will be run.')
     parser.add_argument("--print-match", action='store_true', default=False, help='this is a debug option. Print matched code and node for each file.')
 
     args = parser.parse_args()
@@ -73,13 +74,13 @@ def main():
         if utils.is_windows():
             q.execute(write=True, silent=False, need_confirm=not args.no_confirm, backup=backup, in_process=True)
         else:
-            q.execute(write=True, silent=False, need_confirm=not args.no_confirm, backup=backup)
+            q.execute(write=True, silent=False, need_confirm=not args.no_confirm, parallel=args.parallel, backup=backup)
     else:
         # print diff to stdout
         if utils.is_windows():
             q.execute(write=False, silent=False, in_process=True)
         else:
-            q.execute(write=False, silent=False)
+            q.execute(write=False, silent=False, parallel=args.parallel)
         click.secho('Refactor finished without touching source files, add "--write" to modify source files in-place if everything is ok.', fg="red", bold=True)
 
 if __name__ == "__main__":
