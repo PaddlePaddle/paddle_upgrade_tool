@@ -232,12 +232,17 @@ class TestRefactorKwargs(unittest.TestCase):
             "args_change": [
                 [ "x", "x_new" ],
                 [ "out", "" ],
-                [ "", "name", "test" ]
+                [ "", "name", "test" ],
             ],
             "args_warning": {
                 "x_new": "x_new is deleted in paddle.add"
             }
-        }
+        },
+        "paddle.reassign": {
+            "args_change": [
+                [ "", "x", "2" ],
+            ],
+        },
     }
 
     def _run(self, change_spec, input_src, expected_src):
@@ -275,6 +280,13 @@ class TestRefactorKwargs(unittest.TestCase):
         '''
         self._run(self.change_spec, input_src, expected_src)
 
+        input_src = '''
+        paddle.reassign(x=1)
+        '''
+        expected_src = '''
+        paddle.reassign(x=2)
+        '''
+        self._run(self.change_spec, input_src, expected_src)
 
 class TestWithRefactor(unittest.TestCase):
     change_spec = {}
