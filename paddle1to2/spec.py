@@ -2072,7 +2072,7 @@ change_spec = {
         "alias": [
             "paddle.fluid.layers.nn.fc"
         ],
-        "update_to": "paddle.static.nn.fc",
+        "warning": "in static graph, this api is update to paddle.static.nn.fc, in dynamic graph, this api is update to paddle.nn.functional.linear"
     },
     "paddle.fluid.layers.nn.reduce_all": {
         "alias": [
