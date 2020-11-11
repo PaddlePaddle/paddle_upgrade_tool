@@ -2095,7 +2095,7 @@ change_spec = {
                 "act",
                 "activation"
             ]
-        ]
+        ],
         "warning": "in static graph, this api is update to paddle.static.nn.fc, in dynamic graph, this api is update to paddle.nn.functional.linear"
     },
     "paddle.fluid.layers.nn.reduce_all": {
