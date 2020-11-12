@@ -2072,6 +2072,30 @@ change_spec = {
         "alias": [
             "paddle.fluid.layers.nn.fc"
         ],
+        "update_to": "paddle.static.nn.fc",
+        "args_list": [
+            "input",
+            "size",
+            "num_flatten_dims",
+            "param_attr",
+            "bias_attr",
+            "act",
+            "name"
+        ],
+        "args_change": [
+            [
+                "input",
+                "x"
+            ],
+            [
+                "param_attr",
+                "weight_attr"
+            ],
+            [
+                "act",
+                "activation"
+            ]
+        ],
         "warning": "in static graph, this api is update to paddle.static.nn.fc, in dynamic graph, this api is update to paddle.nn.functional.linear"
     },
     "paddle.fluid.layers.nn.reduce_all": {
