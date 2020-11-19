@@ -1,4 +1,13 @@
 change_spec = {
+    "paddle.fluid.layers.clip": {
+        "alias": [
+            "paddle.fluid.layers.nn.clip"
+        ],
+        "update_to": "paddle.clip"
+    },
+    "paddle.fluid.data": {
+        "update_to": "paddle.static.data"
+    },
     "paddle.fluid.layers.nn.pow": {
         "alias": [
             "paddle.fluid.layers.pow"
