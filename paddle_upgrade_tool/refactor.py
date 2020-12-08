@@ -9,9 +9,9 @@ from fissix.pygram import python_grammar, python_symbols
 from fissix.patcomp import PatternCompiler
 from fissix.pgen2 import token
 
-from paddle1to2.common import logger
-from paddle1to2 import processors, fixers, utils, transformers
-from paddle1to2.utils import log_debug, log_info, log_warning, log_error
+from paddle_upgrade_tool.common import logger
+from paddle_upgrade_tool import processors, fixers, utils, transformers
+from paddle_upgrade_tool.utils import log_debug, log_info, log_warning, log_error
 
 
 # don't change the order if you don't know what you are doing.

@@ -12,7 +12,7 @@ from fissix.pgen2 import token
 from fissix.pytree import Leaf, Node
 from fissix.fixer_util import Attr, Comma, Dot, LParen, Name, Newline, RParen, KeywordArg, Number, ArgList
 
-from paddle1to2.common import logger
+from paddle_upgrade_tool.common import logger
 
 def log_debug(filename, lineno, msg):
     _msg = "{}:{} {}".format(filename, lineno, msg)

@@ -1,12 +1,12 @@
 Upgrade your python model from paddle-1.x to paddle-2.
 
-[![Build Status](https://travis-ci.org/PaddlePaddle/paddle1to2.svg?branch=master)](https://travis-ci.org/PaddlePaddle/paddle1to2)
-[![Coverage Status](https://coveralls.io/repos/github/PaddlePaddle/paddle1to2/badge.svg?branch=master&kill_cache=1)](https://coveralls.io/github/PaddlePaddle/paddle1to2?branch=master)
-[![Version](https://img.shields.io/pypi/v/paddle1to2)](https://pypi.org/project/paddle1to2)
+[![Build Status](https://travis-ci.org/PaddlePaddle/paddle_upgrade_tool.svg?branch=master)](https://travis-ci.org/PaddlePaddle/paddle_upgrade_tool)
+[![Coverage Status](https://coveralls.io/repos/github/PaddlePaddle/paddle_upgrade_tool/badge.svg?branch=master&kill_cache=1)](https://coveralls.io/github/PaddlePaddle/paddle_upgrade_tool?branch=master)
+[![Version](https://img.shields.io/pypi/v/paddle_upgrade_tool)](https://pypi.org/project/paddle_upgrade_tool)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
 ### Attention
-`paddle1to2` aims to convert python files from paddle-1.x to paddle-2 one by one, it won't handle indirect imports. e.g.
+`paddle_upgrade_tool` aims to convert python files from paddle-1.x to paddle-2 one by one, it won't handle indirect imports. e.g.
 
 ```python
 # filename "a.py"
@@ -20,67 +20,67 @@ class MyLayer(fluid.layers.Layer):
 ```
 
 `fluid.layers.Layer` in "b.py" won't get converted.
-**So you have to make sure you have import all used paddle modules, classes, objects directly for every python file before running `paddle1to2`.**
+**So you have to make sure you have import all used paddle modules, classes, objects directly for every python file before running `paddle_upgrade_tool`.**
 
 ### Install
-paddle1to2 support Linux, Mac OS, Windows([Git Bash](https://gitforwindows.org/) is recommended), **but it requires Python 3.5.4 or higher to run**. Multi-Process is supported for Linux and Mac OS, Single-Process is support for Windows, this will lead to performance difference.
+paddle_upgrade_tool support Linux, Mac OS, Windows([Git Bash](https://gitforwindows.org/) is recommended), **but it requires Python 3.5.4 or higher to run**. Multi-Process is supported for Linux and Mac OS, Single-Process is support for Windows, this will lead to performance difference.
 
 1. install with pip
 
 ```bash
-pip install -U paddle1to2
-paddle1to2 --help # show help
-paddle1to2 --inpath /path/to/model.py # upgrade your model from paddle-1.x to paddle-2.0
+pip install -U paddle_upgrade_tool
+paddle_upgrade_tool --help # show help
+paddle_upgrade_tool --inpath /path/to/model.py # upgrade your model from paddle-1.x to paddle-2.0
 ```
 
 **ATTENTION**: If your device contains multiple versions of python, you may need to run the following commands instead:
 ```bash
-python3 -m pip install -U paddle1to2
-python3 -m paddle1to2 -h
-python3 -m paddle1to2 --inpath /path/to/model.py
+python3 -m pip install -U paddle_upgrade_tool
+python3 -m paddle_upgrade_tool -h
+python3 -m paddle_upgrade_tool --inpath /path/to/model.py
 ```
 
 2. install from source
 
 ```bash
-git clone https://github.com/T8T9/paddle1to2.git
-cd paddle1to2
+git clone https://github.com/T8T9/paddle_upgrade_tool.git
+cd paddle_upgrade_tool
 python setup.py sdist bdist_wheel
-pip install -U ./dist/paddle1to2-*.whl
-paddle1to2 --help # show help
-paddle1to2 --inpath /path/to/model.py # upgrade your model from paddle-1.x to paddle-2.0
+pip install -U ./dist/paddle_upgrade_tool-*.whl
+paddle_upgrade_tool --help # show help
+paddle_upgrade_tool --inpath /path/to/model.py # upgrade your model from paddle-1.x to paddle-2.0
 ```
 
 ### Develop
 If you are a develop, and you want to test your code quickly, you can run the following command in project directory:
 
 ```bash
-python -m paddle1to2 --inpath /path/to/model.py
+python -m paddle_upgrade_tool --inpath /path/to/model.py
 
 #or 
 
-python paddle1to2/main.py --inpath /path/to/model.py
+python paddle_upgrade_tool/main.py --inpath /path/to/model.py
 ```
 
 Moreover, if you want to run a specific refactor, you can use the following command:
 
 ```bash
-python -m paddle1to2 --inpath /path/to/model.py --refactor <refactor_name>
+python -m paddle_upgrade_tool --inpath /path/to/model.py --refactor <refactor_name>
 ```
 
-use `python -m paddle1to2 -h` to see full list of all refactors.
+use `python -m paddle_upgrade_tool -h` to see full list of all refactors.
 
 if you want to run all unittest, use command:
 
 ```bash
-python -m unittest discover paddle1to2/tests/
+python -m unittest discover paddle_upgrade_tool/tests/
 # or
 python setup.py test
 ```
 or use command:
 
 ```bash
-python -m unittest paddle1to2/tests/test_refactor.py
+python -m unittest paddle_upgrade_tool/tests/test_refactor.py
 ```
 to run specific test file.
 

@@ -44,7 +44,7 @@ def log_to_file(log_filepath="report.log"):
     logger.addHandler(file_handler)
 
 def _build_default_logger():
-    logger = logging.getLogger('paddle1to2')
+    logger = logging.getLogger('paddle_upgrade_tool')
     logger.setLevel("INFO")
     
     console_handler = logging.StreamHandler(stream=sys.stdout) # default stream is sys.stderr

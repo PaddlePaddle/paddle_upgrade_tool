@@ -7,4 +7,4 @@ cases
 cases/*
 build/
 dist/
-paddle1to2.egg-info/
+paddle_upgrade_tool.egg-info/

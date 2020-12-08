@@ -20,11 +20,11 @@ jobs:
       before_script:
         - python3 --version
       script:
-        - python3 -m unittest discover paddle1to2/tests/ 
+        - python3 -m unittest discover paddle_upgrade_tool/tests/
         - python3 setup.py sdist bdist_wheel
-        - pip3 install dist/paddle1to2*.whl
+        - pip3 install dist/paddle_upgrade_tool*.whl
         - cd ..
-        - python3 -m unittest discover paddle1to2.tests.test_refactor
+        - python3 -m unittest discover paddle_upgrade_tool.tests.test_refactor
       after_success: ""
     - name: "python: 3.5 on Windows"
       os: windows
@@ -34,11 +34,11 @@ jobs:
         - python -m pip install --upgrade pip
         - pip3 install wheel
       script:
-        - python -m unittest discover paddle1to2/tests/
+        - python -m unittest discover paddle_upgrade_tool/tests/
         - python setup.py sdist bdist_wheel
-        - pip3 install dist/paddle1to2*.whl
+        - pip3 install dist/paddle_upgrade_tool*.whl
         - cd ..
-        - python -m unittest discover paddle1to2.tests.test_refactor
+        - python -m unittest discover paddle_upgrade_tool.tests.test_refactor
       after_success: ""
       env: PATH=/c/Python35:/c/Python35/Scripts:$PATH
 
@@ -53,15 +53,15 @@ script:
 - echo "this is script"
 - |
   (
-    python -m unittest discover paddle1to2/tests/
+    python -m unittest discover paddle_upgrade_tool/tests/
     python setup.py sdist bdist_wheel
-    pip3 install dist/paddle1to2*.whl
+    pip3 install dist/paddle_upgrade_tool*.whl
     cd ..
-    python -m unittest discover paddle1to2.tests.test_refactor
-    paddle1to2 -h
+    python -m unittest discover paddle_upgrade_tool.tests.test_refactor
+    paddle_upgrade_tool -h
     pip3 install pytest-cov coveralls
-    cd paddle1to2
-    pytest --cov=paddle1to2
+    cd paddle_upgrade_tool
+    pytest --cov=paddle_upgrade_tool
   )
 
 after_script:

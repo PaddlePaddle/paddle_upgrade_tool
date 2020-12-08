@@ -5,8 +5,8 @@ from fissix.pygram import python_grammar, python_symbols
 from fissix.pgen2 import token
 from fissix import patcomp
 
-from paddle1to2 import utils
-from paddle1to2.utils import log_debug, log_info, log_warning, log_error
+from paddle_upgrade_tool import utils
+from paddle_upgrade_tool.utils import log_debug, log_info, log_warning, log_error
 
 
 def default_transformer(node: LN, capture: Capture, filename: Filename):

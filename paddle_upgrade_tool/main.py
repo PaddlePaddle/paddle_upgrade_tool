@@ -9,11 +9,11 @@ from tools import click
 
 from bowler import Query
 
-from paddle1to2.common import *
-from paddle1to2 import refactor, filters, utils
-from paddle1to2.refactor import *
-from paddle1to2.spec import change_spec
-from paddle1to2.utils import backup_inpath
+from paddle_upgrade_tool.common import *
+from paddle_upgrade_tool import refactor, filters, utils
+from paddle_upgrade_tool.refactor import *
+from paddle_upgrade_tool.spec import change_spec
+from paddle_upgrade_tool.utils import backup_inpath
 
 def should_convert(inpath):
     """
@@ -30,7 +30,7 @@ def main():
     parser.add_argument("--no-log-file", dest="no_log_file", action='store_true', default=False, help="don't log to file")
     parser.add_argument("--log-filepath", dest="log_filepath", type=str, help='set log file path, default is "report.log"')
     parser.add_argument("-i", "--inpath", required=True, type=str, help='the file or directory path you want to upgrade.')
-    parser.add_argument("-b", "--backup", type=str, nargs='?', default=None, const=None, help='backup directory, default is the "~/.paddle1to2/".')
+    parser.add_argument("-b", "--backup", type=str, nargs='?', default=None, const=None, help='backup directory, default is the "~/.paddle_upgrade_tool/".')
     parser.add_argument("-w", "--write", action='store_true', default=False, help='modify files in-place.')
     parser.add_argument("--no-confirm", dest="no_confirm", action='store_true', default=False, help='write files in-place without confirm, ignored without --write.')
     parser.add_argument("-p", "--parallel", type=int, default=None, help='specify the maximum number of concurrent processes to use when refactoring, ignored with --no-confirm.')
@@ -42,7 +42,7 @@ def main():
         args.refactor = set(args.refactor)
     if args.backup is None:
         home = os.path.expanduser('~')
-        args.backup = os.path.join(home, '.paddle1to2')
+        args.backup = os.path.join(home, '.paddle_upgrade_tool')
     else:
         args.backup = os.path.expanduser(args.backup)
 

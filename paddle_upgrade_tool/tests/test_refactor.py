@@ -5,8 +5,8 @@ import textwrap
 from tempfile import NamedTemporaryFile
 
 from bowler import Query
-from paddle1to2.refactor import *
-from paddle1to2 import utils
+from paddle_upgrade_tool.refactor import *
+from paddle_upgrade_tool import utils
 
 def _refactor_helper(refactor_func, input_src, change_spec):
     try:
