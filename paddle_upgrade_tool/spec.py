@@ -1,4 +1,132 @@
 change_spec = {
+    "paddle.fluid.unique_name.generate": {
+        "update_to": "paddle.utils.unique_name.generate"
+    },
+    "paddle.fluid.unique_name.guard": {
+        "update_to": "paddle.utils.unique_name.guard"
+    },
+    "paddle.fluid.dygraph.base.to_variable": {
+        "alias": [
+            "paddle.fluid.dygraph.to_variable"
+        ],
+        "update_to": "paddle.to_tensor",
+        "args_list": [
+            "value",
+            "name",
+            "zero_copy"
+        ],
+        "args_change": [
+            [
+                "value",
+                "data"
+            ],
+            [
+                "name",
+                ""
+            ],
+            [
+                "zero_copy",
+                ""
+            ]
+        ]
+    },
+    "paddle.fluid.initializer.Uniform": {
+        "alias": [
+            "paddle.fluid.initializer.UniformInitializer"
+        ],
+        "update_to": "paddle.nn.initializer.Uniform",
+        "args_list": [
+            "low",
+            "high",
+            "seed",
+            "diag_num",
+            "diag_step",
+            "diag_val"
+        ],
+        "args_change": [
+            [
+                "seed",
+                ""
+            ],
+            [
+                "diag_num",
+                ""
+            ],
+            [
+                "diag_step",
+                ""
+            ],
+            [
+                "diag_val",
+                ""
+            ]
+        ]
+    },
+    "paddle.fluid.layers.matmul": {
+        "update_to": "paddle.matmul",
+        "args_list": [
+            "x",
+            "y",
+            "transpose_x",
+            "transpose_y",
+            "alpha",
+            "name"
+        ],
+        "args_change": [
+            [
+                "alpha",
+                ""
+            ]
+        ]
+    },
+    "paddle.fluid.initializer.Normal": {
+        "alias": [
+            "paddle.fluid.initializer.NormalInitializer"
+        ],
+        "update_to": "paddle.nn.initializer.Normal",
+        "args_list": [
+            "loc",
+            "scale",
+            "seed"
+        ],
+        "args_change": [
+            [
+                "loc",
+                "mean"
+            ],
+            [
+                "scale",
+                "std"
+            ],
+            [
+                "seed",
+                ""
+            ]
+        ]
+    },
+    "paddle.fluid.optimizer.SGD": {
+        "alias": [
+            "paddle.fluid.optimizer.SGDOptimizer"
+        ],
+        "update_to": "paddle.optimizer.SGD",
+        "args_list": [
+            "learning_rate",
+            "parameter_list",
+            "regularization",
+            "grad_clip",
+            "name"
+        ],
+        "args_change": [
+            [
+                "parameter_list",
+                "parameters"
+            ],
+            [
+                "regularization",
+                "weight_decay"
+            ]
+        ]
+    },
     "paddle.fluid.layers.clip": {
         "alias": [
             "paddle.fluid.layers.nn.clip"
@@ -190,7 +318,29 @@ change_spec = {
         "alias": [
             "paddle.fluid.layers.reshape"
         ],
-        "warning": "this api is update to paddle.reshape"
+        "update_to": "paddle.reshape",
+        "args_list": [
+            "x",
+            "shape",
+            "actual_shape",
+            "act",
+            "inplace",
+            "name"
+        ],
+        "args_change": [
+            [
+                "actual_shape",
+                ""
+            ],
+            [
+                "act",
+                ""
+            ],
+            [
+                "inplace",
+                ""
+            ]
+        ]
     },
     "paddle.fluid.layers.control_flow.greater_than": {
         "alias": [
