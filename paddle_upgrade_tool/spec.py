@@ -1385,12 +1385,6 @@ change_spec = {
             "cond": "cond is deleted in this version"
         }
     },
-    "paddle.fluid.dygraph.parallel.prepare_context": {
-        "alias": [
-            "paddle.fluid.dygraph.prepare_context"
-        ],
-        "update_to": "paddle.distributed.prepare_context"
-    },
     "paddle.reader.decorator.multiprocess_reader": {
         "alias": [
             "paddle.fluid.io.multiprocess_reader",
