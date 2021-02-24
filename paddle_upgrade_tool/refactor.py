@@ -187,7 +187,7 @@ def refactor_import(q: Query, change_spec):
         if filename in paddle_imported:
             return
         if filename in paddle_found:
-            touch_import(None, 'paddle', node)
+            touch_import(None, 'paddle', node, force=True)
             log_info(filename, node.get_lineno(), 'add "import paddle"')
             paddle_imported.add(filename)
     q.modify(_add_import)
