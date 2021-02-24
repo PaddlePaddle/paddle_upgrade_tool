@@ -363,7 +363,7 @@ def is_import(node):
     return node.type in (syms.import_name, syms.import_from)
 
 
-def touch_import(package, name, node):
+def touch_import(package, name, node, force=False):
     """ Works like `does_tree_import` but adds an import statement
         if it was not imported. """
 
@@ -376,7 +376,7 @@ def touch_import(package, name, node):
 
     root = find_root(node)
 
-    if does_tree_import(package, name, root):
+    if not force and does_tree_import(package, name, root):
         return
 
     # figure out where to insert the new import.  First try to find
