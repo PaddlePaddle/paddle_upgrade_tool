@@ -13,7 +13,7 @@ from paddle_upgrade_tool.common import *
 from paddle_upgrade_tool import refactor, filters, utils
 from paddle_upgrade_tool.refactor import *
 from paddle_upgrade_tool.spec import change_spec
-from paddle_upgrade_tool.utils import backup_inpath
+from paddle_upgrade_tool.utils import backup_inpath, print_statistic
 
 def should_convert(inpath):
     """
@@ -82,6 +82,8 @@ def main():
         else:
             q.execute(write=False, silent=False, parallel=args.parallel)
         click.secho('Refactor finished without touching source files, add "--write" to modify source files in-place if everything is ok.', fg="red", bold=True)
+
+    print_statistic(levels=['warning'])
 
 if __name__ == "__main__":
     sys.exit(main())
