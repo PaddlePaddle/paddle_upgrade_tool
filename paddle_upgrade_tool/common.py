@@ -1,5 +1,6 @@
 import sys
 import logging
+import threading
 from multiprocessing import Manager
 
 
@@ -85,3 +86,4 @@ headless_logger = _build_headless_logger()
 # }
 manager = Manager()
 statistic = manager.dict()
+statistic_lock = threading.Lock()
