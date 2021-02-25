@@ -30,8 +30,8 @@ def log_warning(filename, lineno, msg, add_statistic=True):
         statistic[filename] = manager.dict()
     if 'warning' not in statistic[filename]:
         statistic[filename]['warning'] = manager.list()
-    statistic_lock.release()
     statistic[filename]['warning'].append(_msg)
+    statistic_lock.release()
 
 def log_error(filename, lineno, msg, add_statistic=True):
     _msg = "{}:{} {}".format(filename, lineno, msg)
@@ -41,8 +41,8 @@ def log_error(filename, lineno, msg, add_statistic=True):
         statistic[filename] = manager.dict()
     if 'error' not in statistic[filename]:
         statistic[filename]['error'] = manager.list()
-    statistic_lock.release()
     statistic[filename]['error'].append(_msg)
+    statistic_lock.release()
 
 def node2code(nodes, with_first_prefix=False):
     """
