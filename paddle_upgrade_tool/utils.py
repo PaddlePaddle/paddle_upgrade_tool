@@ -478,11 +478,11 @@ def print_statistic(filename=None, levels=None):
             logs = statistic[_filename][level]
             for log in logs:
                 if level == 'info':
-                    headless_logger.info("WARNING: " + log)
+                    headless_logger.info("INFO: " + log)
                 elif level == 'warning':
                     headless_logger.warning("WARNING: " + log)
                 elif level == 'error':
-                    headless_logger.error("WARNING: " + log)
+                    headless_logger.error("ERROR: " + log)
                 else:
                     logger.warning("unsupported statistic level: {}".format(level))
     headless_logger.info('#' * 53)
