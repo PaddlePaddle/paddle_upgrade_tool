@@ -12,23 +12,25 @@ from fissix.pgen2 import token
 from fissix.pytree import Leaf, Node
 from fissix.fixer_util import Attr, Comma, Dot, LParen, Name, Newline, RParen, KeywordArg, Number, ArgList
 
-from paddle_upgrade_tool.common import logger
+from paddle_upgrade_tool.common import logger, headless_logger, statistic, manager, statistic_lock
 
-def log_debug(filename, lineno, msg):
+def log_debug(filename, lineno, msg, add_statistic=True):
     _msg = "{}:{} {}".format(filename, lineno, msg)
     logger.debug(_msg)
 
-def log_info(filename, lineno, msg):
+def log_info(filename, lineno, msg, add_statistic=True):
     _msg = "{}:{} {}".format(filename, lineno, msg)
     logger.info(_msg)
 
-def log_warning(filename, lineno, msg):
+def log_warning(filename, lineno, msg, add_statistic=True):
     _msg = "{}:{} {}".format(filename, lineno, msg)
     logger.warning(_msg)
+    statistic.setdefault(filename, manager.dict()).setdefault('warning', manager.list()).append(_msg)
 
-def log_error(filename, lineno, msg):
+def log_error(filename, lineno, msg, add_statistic=True):
     _msg = "{}:{} {}".format(filename, lineno, msg)
     logger.error(_msg)
+    statistic.setdefault(filename, manager.dict()).setdefault('error', manager.list()).append(_msg)
 
 def node2code(nodes, with_first_prefix=False):
     """
@@ -181,7 +183,7 @@ def remove_argument(filename, trailer_node, key):
             elif node.next_sibling is not None and node.next_sibling.type is token.COMMA:
                 node.next_sibling.remove()
             node.remove()
-            log_warning(filename, trailer_node.get_lineno(), 'argument "{}" is removed.'.format(key))
+            log_info(filename, trailer_node.get_lineno(), 'argument "{}" is removed.'.format(key))
             break
     if not found_key:
         log_info(filename, trailer_node.get_lineno(), 'argument "{}" not found.'.format(key))
@@ -207,7 +209,7 @@ def rename_argument(filename, trailer_node, old_key, new_key):
         if _key_node.value == old_key:
             found_key = True
             _key_node.value = new_key
-            log_warning(filename, trailer_node.get_lineno(), 'rename argument "{}" to "{}".'.format(old_key, new_key))
+            log_info(filename, trailer_node.get_lineno(), 'rename argument "{}" to "{}".'.format(old_key, new_key))
             break
     if not found_key:
         log_info(filename, trailer_node.get_lineno(), 'argument "{}" not found.'.format(old_key))
@@ -450,3 +452,30 @@ def is_left_operand(node):
     if node is not None and node.next_sibling is not None and node.next_sibling.type is token.EQUAL:
         return True
     return False
+
+def print_statistic(filename=None, levels=None):
+    """
+    levels is a list, e.g. ['warning', 'error']
+    """
+    if levels is None:
+        levels = ['warning', 'error']
+    headless_logger.info('\n' + '#' * 20 + " STATISTIC " + '#' * 20)
+    for _filename in statistic.keys():
+        if filename is not None and _filename != filename:
+            continue
+        headless_logger.info("filename: " + _filename)
+        for level in levels:
+            if level not in statistic[_filename].keys():
+                continue
+            logs = statistic[_filename][level]
+            for log in logs:
+                if level == 'info':
+                    headless_logger.info("INFO: " + log)
+                elif level == 'warning':
+                    headless_logger.warning("WARNING: " + log)
+                elif level == 'error':
+                    headless_logger.error("ERROR: " + log)
+                else:
+                    logger.warning("unsupported statistic level: {}".format(level))
+        headless_logger.info('-' * 51)
+    headless_logger.info('#' * 51)

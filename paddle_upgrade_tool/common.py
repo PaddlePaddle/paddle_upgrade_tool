@@ -1,5 +1,7 @@
 import sys
 import logging
+import threading
+from multiprocessing import Manager
 
 
 __all__ = [
@@ -43,10 +45,15 @@ def log_to_file(log_filepath="report.log"):
     file_handler.setFormatter(log_format)
     logger.addHandler(file_handler)
 
+    headless_file_handler = logging.FileHandler(log_filepath)
+    headless_log_format = logging.Formatter('%(message)s', datefmt='%Y-%m-%d %H:%M:%S')
+    headless_file_handler.setFormatter(headless_log_format)
+    headless_logger.addHandler(headless_file_handler)
+
 def _build_default_logger():
     logger = logging.getLogger('paddle_upgrade_tool')
     logger.setLevel("INFO")
-    
+
     console_handler = logging.StreamHandler(stream=sys.stdout) # default stream is sys.stderr
     log_format = ColorFormatter('%(asctime)s - %(filename)s:%(lineno)d - %(levelname)s - %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
     console_handler.setFormatter(log_format)
@@ -54,4 +61,29 @@ def _build_default_logger():
 
     return logger
 
+def _build_headless_logger():
+    logger = logging.getLogger('statistic')
+    logger.setLevel("INFO")
+
+    console_handler = logging.StreamHandler(stream=sys.stdout) # default stream is sys.stderr
+    log_format = ColorFormatter('%(message)s', datefmt='%Y-%m-%d %H:%M:%S')
+    console_handler.setFormatter(log_format)
+    logger.addHandler(console_handler)
+
+    return logger
+
 logger = _build_default_logger()
+headless_logger = _build_headless_logger()
+
+# record refactor log.
+# example:
+# statistic = {
+#   '/path/to/file1.py':{
+#       'info':  ['rename "paddle.api1" to "paddle.api2"', 'rename "paddle.api3" to "paddle.api4"'],
+#       'warn':  ['delete "paddle.api5"'],
+#       'error': ['parse "paddle.api6" error'],
+#   },
+# }
+manager = Manager()
+statistic = manager.dict()
+statistic_lock = threading.Lock()
