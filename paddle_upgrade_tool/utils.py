@@ -25,24 +25,12 @@ def log_info(filename, lineno, msg, add_statistic=True):
 def log_warning(filename, lineno, msg, add_statistic=True):
     _msg = "{}:{} {}".format(filename, lineno, msg)
     logger.warning(_msg)
-    statistic_lock.acquire()
-    if filename not in statistic:
-        statistic[filename] = manager.dict()
-    if 'warning' not in statistic[filename]:
-        statistic[filename]['warning'] = manager.list()
-    statistic[filename]['warning'].append(_msg)
-    statistic_lock.release()
+    statistic.setdefault(filename, manager.dict()).setdefault('warning', manager.list()).append(_msg)
 
 def log_error(filename, lineno, msg, add_statistic=True):
     _msg = "{}:{} {}".format(filename, lineno, msg)
     logger.error(_msg)
-    statistic_lock.acquire()
-    if filename not in statistic:
-        statistic[filename] = manager.dict()
-    if 'error' not in statistic[filename]:
-        statistic[filename]['error'] = manager.list()
-    statistic[filename]['error'].append(_msg)
-    statistic_lock.release()
+    statistic.setdefault(filename, manager.dict()).setdefault('error', manager.list()).append(_msg)
 
 def node2code(nodes, with_first_prefix=False):
     """
@@ -470,14 +458,14 @@ def print_statistic(filename=None, levels=None):
     levels is a list, e.g. ['warning', 'error']
     """
     if levels is None:
-        levels = []
-    headless_logger.info('#' * 20 + " STATISTIC " + '#' * 20)
-    for _filename in statistic:
+        levels = ['warning', 'error']
+    headless_logger.info('\n' + '#' * 20 + " STATISTIC " + '#' * 20)
+    for _filename in statistic.keys():
         if filename is not None and _filename != filename:
             continue
-        headless_logger.info("filename: " + _filename + "\n")
+        headless_logger.info("filename: " + _filename)
         for level in levels:
-            if level not in statistic[_filename]:
+            if level not in statistic[_filename].keys():
                 continue
             logs = statistic[_filename][level]
             for log in logs:
@@ -489,4 +477,5 @@ def print_statistic(filename=None, levels=None):
                     headless_logger.error("ERROR: " + log)
                 else:
                     logger.warning("unsupported statistic level: {}".format(level))
-    headless_logger.info('#' * 53)
+        headless_logger.info('-' * 51)
+    headless_logger.info('#' * 51)

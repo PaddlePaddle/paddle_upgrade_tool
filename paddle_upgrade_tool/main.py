@@ -83,7 +83,8 @@ def main():
             q.execute(write=False, silent=False, parallel=args.parallel)
         click.secho('Refactor finished without touching source files, add "--write" to modify source files in-place if everything is ok.', fg="red", bold=True)
 
-    print_statistic(levels=['warning'])
+    if not(sys.version_info.major == 3 and sys.version_info.minor == 5):
+        print_statistic(levels=['warning'])
 
 if __name__ == "__main__":
     sys.exit(main())
