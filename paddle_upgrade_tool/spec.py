@@ -275,6 +275,26 @@ change_spec = {
     "paddle.fluid.backward.append_backward": {
         "update_to": "paddle.static.append_backward"
     },
+    "paddle.fluid.layers.cos_sim": {
+        "alias": [
+            "paddle.fluid.layers.nn.cos_sim"
+        ],
+        "update_to": "paddle.nn.functional.cosine_similarity",
+        "args_list": [
+            "X",
+            "Y"
+        ],
+        "args_change": [
+            [
+                "X",
+                "x1"
+            ],
+            [
+                "Y",
+                "x2"
+            ]
+        ]
+    },
     "paddle.fluid.layers.diag_embed": {
         "alias": [
             "paddle.fluid.layers.nn.diag_embed"
@@ -293,11 +313,32 @@ change_spec = {
         ],
         "update_to": "paddle.static.nn.multi_box_head"
     },
+    "paddle.fluid.save": {
+        "warning": "this api is update to paddle.save"
+    },
+    "paddle.fluid.layers.load": {
+        "alias": [
+            "paddle.fluid.layers.load"
+        ],
+        "warning": "this api is update to paddle.load"
+    },
+    "paddle.fluid.layers.cosine_decay": {
+        "alias": [
+            "paddle.fluid.layers.learning_rate_scheduler.cosine_decay"
+        ],
+        "warning": "this api is update to paddle.optimizer.lr.CosineAnnealingDecay"
+    },
     "paddle.fluid.dygraph.InverseTimeDecay": {
         "alias": [
             "paddle.fluid.dygraph.learning_rate_scheduler.InverseTimeDecay"
         ],
-        "warning": "this api is update to paddle.expand"
+        "warning": "this api is update to paddle.optimizer.lr.InverseTimeDecay"
+    },
+    "paddle.fluid.layers.brelu": {
+        "alias": [
+            "paddle.fluid.layers.nn.brelu"
+        ],
+        "update_to": "paddle.nn.functional.activation.brelu"
     },
     "paddle.fluid.layers.asin": {
         "alias": [
@@ -313,6 +354,12 @@ change_spec = {
     },
     "paddle.fluid.metrics.Auc": {
         "warning": "this api is update to paddle.metric.Auc"
+    },
+    "paddle.fluid.layers.auc": {
+        "alias": [
+            "paddle.fluid.layers.metric_op.auc"
+        ],
+        "update_to": "paddle.fluid.layers.metric_op.auc"
     },
     "paddle.fluid.layers.nn.reshape": {
         "alias": [
@@ -385,7 +432,6 @@ change_spec = {
         "alias": [
             "paddle.fluid.dygraph.ExponentialDecay"
         ],
-        # "update_to": "paddle.optimizer.lr.ExponentialDecay",
         "warning": "this api is update to paddle.optimizer.lr.ExponentialDecay"
     },
     "paddle.fluid.layers.detection.ssd_loss": {
@@ -471,6 +517,50 @@ change_spec = {
             ]
         ]
     },
+    "paddle.fluid.layers.one_hot": {
+        "alias": [
+            "paddle.fluid.layers.nn.one_hot",
+            "paddle.fluid.input.one_hot",
+            "paddle.fluid.one_hot"
+        ],
+        "warning": "please use paddle.nn.functional.one_hot"
+    },
+    "paddle.fluid.layers.has_nan": {
+        "alias": [
+            "paddle.fluid.layers.tensor.has_nan"
+        ],
+        "warning": "please use paddle.isnan"
+    },
+    "paddle.fluid.layers.has_inf": {
+        "alias": [
+            "paddle.fluid.layers.tensor.has_inf"
+        ],
+        "warning": "please use paddle.isinf"
+    },
+    "paddle.fluid.layers.pool3d": {
+        "alias": [
+            "paddle.fluid.layers.nn.pool3d"
+        ],
+        "warning": "please use paddle.nn.functional.avg_pool3d or paddle.nn.functional.max_pool3d"
+    },
+    "paddle.fluid.layers.adaptive_pool2d": {
+        "alias": [
+            "paddle.fluid.layers.nn.adaptive_pool2d"
+        ],
+        "warning": "please use paddle.nn.functional.adaptive_avg_pool2d or paddle.nn.functional.adaptive_max_pool2d"
+    },
+    "paddle.fluid.layers.adaptive_pool3d": {
+        "alias": [
+            "paddle.fluid.layers.nn.adaptive_pool3d"
+        ],
+        "warning": "please use paddle.nn.functional.adaptive_avg_pool3d or paddle.nn.functional.adaptive_max_pool3d"
+    },
+    "paddle.fluid.layers.pool2d": {
+        "alias": [
+            "paddle.fluid.layers.nn.pool2d"
+        ],
+        "warning": "please use paddle.nn.functional.avg_pool2d or paddle.nn.functional.max_pool2d"
+    },
     "paddle.fluid.dygraph.Pool2D": {
         "alias": [
             "paddle.fluid.dygraph.nn.Pool2D"
@@ -488,6 +578,12 @@ change_spec = {
             "paddle.fluid.layers.nn.multiplex"
         ],
         "update_to": "paddle.multiplex"
+    },
+    "paddle.fluid.layers.square_error_cost": {
+        "alias": [
+            "paddle.fluid.layers.loss.square_error_cost"
+        ],
+        "update_to": "paddle.nn.functional.square_error_cost"
     },
     "paddle.fluid.embedding": {
         "alias": [
@@ -753,6 +849,33 @@ change_spec = {
             "act": "act is deleted in paddle.add"
         }
     },
+    "paddle.fluid.layers.elementwise_sub": {
+        "alias": [
+            "paddle.fluid.layers.nn.elementwise_sub"
+        ],
+        "update_to": "paddle.subtract",
+        "args_list": [
+            "x",
+            "y",
+            "axis",
+            "act",
+            "name"
+        ],
+        "args_change": [
+            [
+                "axis",
+                ""
+            ],
+            [
+                "act",
+                ""
+            ]
+        ],
+        "args_warning": {
+            "axis": "axis is deleted in paddle.add",
+            "act": "act is deleted in paddle.add"
+        }
+    },
     "paddle.fluid.layers.nn.elementwise_sub": {
         "alias": [
             "paddle.fluid.layers.elementwise_sub"
@@ -773,6 +896,10 @@ change_spec = {
             "name"
         ],
         "args_change": [
+            [
+                "axis",
+                ""
+            ],
             [
                 "act",
                 ""
@@ -890,6 +1017,12 @@ change_spec = {
             "paddle.fluid.dygraph.StepDecay"
         ],
         "warning": "this api is update to paddle.optimizer.lr.StepDecay"
+    },
+    "paddle.fluid.framework.load_op_library": {
+        "alias": [
+            "paddle.fluid.load_op_library"
+        ],
+        "update_to": "paddle.utils.load_op_library"
     },
     "paddle.fluid.layers.log": {
         "alias": [
@@ -1061,11 +1194,32 @@ change_spec = {
         ],
         "update_to": "paddle.logical_xor"
     },
+    "paddle.fluid.layers.nn.smooth_l1": {
+        "alias": [
+            "paddle.fluid.layers.smooth_l1"
+        ],
+        "warning": "this api is update to paddle.nn.functional.smooth_l1_loss"
+    },
+    "paddle.fluid.dygraph.dygraph_to_static.to_static_variable_gast_node": {
+        "alias": [
+            "paddle.fluid.dygraph.dygraph_to_static.variable_trans_func.to_static_variable_gast_node"
+        ],
+        "update_to": "paddle.jit.dy2static.to_static_variable_gast_node"
+    },
+    "paddle.fluid.dygraph.dygraph_to_static.convert_call_func.convert_call": {
+        "update_to": "paddle.jit.dy2static.convert_call_func.convert_call"
+    },
     "paddle.fluid.dygraph.dygraph_to_static.create_static_variable_gast_node": {
         "alias": [
             "paddle.fluid.dygraph.dygraph_to_static.variable_trans_func.create_static_variable_gast_node"
         ],
         "update_to": "paddle.jit.dy2static.create_static_variable_gast_node"
+    },
+    "paddle.fluid.dygraph.dygraph_to_static.data_layer_not_check": {
+        "alias": [
+            "paddle.fluid.dygraph.dygraph_to_static.variable_trans_func.data_layer_not_check"
+        ],
+        "update_to": "paddle.jit.dy2static.data_layer_not_check"
     },
     "paddle.fluid.layers.crf_decoding": {
         "alias": [
@@ -1149,6 +1303,9 @@ change_spec = {
             "paddle.fluid.Variable"
         ],
         "update_to": "paddle.static.Variable"
+    },
+    "paddle.fluid.unique_name.switch": {
+        "update_to": "paddle.utils.unique_name.switch"
     },
     "paddle.fluid.layers.atan": {
         "alias": [
@@ -1639,6 +1796,24 @@ change_spec = {
             "name"
         ]
     },
+    "paddle.fluid.layers.hard_shrink": {
+        "alias": [
+            "paddle.fluid.layers.ops.hard_shrink"
+        ],
+        "update_to": "paddle.nn.functional.hardshrink"
+    },
+    "paddle.fluid.dygraph.load_dygraph": {
+        "alias": [
+            "paddle.fluid.dygraph.checkpoint.load_dygraph"
+        ],
+        "update_to": "paddle.load"
+    },
+    "paddle.fluid.dygraph.save_dygraph": {
+        "alias": [
+            "paddle.fluid.dygraph.checkpoint.save_dygraph"
+        ],
+        "update_to": "paddle.save"
+    },
     "paddle.fluid.io.save_inference_model": {
         "update_to": "paddle.static.save_inference_model"
     },
@@ -1744,7 +1919,7 @@ change_spec = {
         "alias": [
             "paddle.fluid.dygraph.base.no_grad"
         ],
-        "update_to": "paddle.framework.no_grad"
+        "update_to": "paddle.no_grad"
     },
     # TODO transformer paddle.nn.functional.dropout
     "paddle.fluid.layers.nn.dropout": {
@@ -1752,6 +1927,30 @@ change_spec = {
             "paddle.fluid.layers.dropout"
         ],
         "warning": "this api is update to paddle.nn.functional.dropout",
+    },
+    "paddle.fluid.layers.nn.pad2d": {
+        "alias": [
+            "paddle.fluid.layers.pad2d"
+        ],
+        "warning": "this api is update to paddle.nn.functional.pad",
+    },
+    "paddle.fluid.layers.random_crop": {
+        "alias": [
+            "paddle.fluid.layers.nn.random_crop"
+        ],
+        "warning": "this api is update to paddle.vision.transforms.RandomCrop",
+    },
+    "paddle.fluid.layers.yolo_box": {
+        "alias": [
+            "paddle.fluid.layers.detection.yolo_box"
+        ],
+        "update_to": "paddle.vision.ops.yolo_box"
+    },
+    "paddle.fluid.layers.yolo_loss": {
+        "alias": [
+            "paddle.fluid.layers.detection.yolo_loss"
+        ],
+        "update_to": "paddle.vision.ops.yolo_loss"
     },
     "paddle.fluid.layers.cast": {
         "alias": [
@@ -1843,6 +2042,42 @@ change_spec = {
         ],
         "warning": "this api is update to paddle.nn.Conv2DTranspose"
     },
+    "paddle.fluid.dataloader.BatchSampler": {
+        "alias": [
+            "paddle.fluid.dataloader.batch_sampler.BatchSampler"
+        ],
+        "warning": "this api is update to paddle.io.BatchSampler"
+    },
+    "paddle.fluid.io.DataLoader": {
+        "alias": [
+            "paddle.fluid.reader.DataLoader"
+        ],
+        "update_to": "paddle.io.DataLoader"
+    },
+    "paddle.fluid.layers.array_length": {
+        "alias": [
+            "paddle.fluid.layers.control_flow.array_length"
+        ],
+        "update_to": "paddle.tensor.array_length"
+    },
+    "paddle.fluid.layers.array_read": {
+        "alias": [
+            "paddle.fluid.layers.control_flow.array_read"
+        ],
+        "update_to": "paddle.tensor.array_read"
+    },
+    "paddle.fluid.layers.array_write": {
+        "alias": [
+            "paddle.fluid.layers.control_flow.array_write"
+        ],
+        "update_to": "paddle.tensor.array_write"
+    },
+    "paddle.fluid.layers.create_array": {
+        "alias": [
+            "paddle.fluid.layers.control_flow.create_array"
+        ],
+        "update_to": "paddle.tensor.create_array"
+    },
     "paddle.fluid.layers.nn.bmm": {
         "alias": [
             "paddle.fluid.layers.bmm"
@@ -1875,18 +2110,23 @@ change_spec = {
             ]
         ]
     },
+    "paddle.fluid.initializer.MSRAInitializer": {
+        "warning": "this api is update to paddle.nn.initializer.KaimingNormal or paddle.nn.initializer.KaimingUniform"
+    },
     "paddle.fluid.initializer.TruncatedNormalInitializer": {
         "alias": [
             "paddle.fluid.initializer.TruncatedNormal"
         ],
-        "warning": "this api is update to paddle.nn.initializer.TruncatedNormal",
-    
+        "warning": "this api is update to paddle.nn.initializer.TruncatedNormal"
+    },
+    "paddle.fluid.initializer.XavierInitializer": {
+        "warning": "this api is update to XavierInitializer or paddle.nn.initializer.XavierUniform"
     },
     "paddle.fluid.layers.maxout": {
         "alias": [
             "paddle.fluid.layers.nn.maxout"
         ],
-        "update_to": "paddle.nn.functional.maxout",
+        "update_to": "paddle.nn.functional.maxout"
     },
     "paddle.fluid.dygraph.parallel.ParallelEnv": {
         "alias": [
@@ -1948,8 +2188,13 @@ change_spec = {
         "alias": [
             "paddle.fluid.dygraph.NoamDecay"
         ],
-        "warning": "this api is update to paddle.optimizer.lr.NoamDecay",
-
+        "warning": "this api is update to paddle.optimizer.lr.NoamDecay"
+    },
+    "paddle.fluid.dygraph.learning_rate_scheduler.ReduceLROnPlateau": {
+        "alias": [
+            "paddle.fluid.dygraph.ReduceLROnPlateau"
+        ],
+        "warning": "this api is update to paddle.optimizer.lr.ReduceOnPlateau"
     },
     "paddle.fluid.layers.erf": {
         "alias": [
@@ -1969,6 +2214,48 @@ change_spec = {
             "paddle.fluid.layers.cumsum"
         ],
         "warning": "this api is update to paddle.cumsum",
+    },
+    "paddle.fluid.io.save_vars": {
+        "update_to": "paddle.static.save_vars",
+    },
+    "paddle.fluid.layers.RNNCell": {
+        "warning": "this api is update to paddle.nn.RNNCellBase",
+    },
+    "paddle.fluid.BuildStrategy": {
+        "alias": [
+            "paddle.fluid.compiler.BuildStrategy"
+        ],
+        "update_to": "paddle.fluid.compiler.BuildStrategy",
+    },
+    "paddle.fluid.layers.rnn": {
+        "warning": "this api is update to paddle.nn.RNN",
+    },
+    "paddle.fluid.layers.hard_swish": {
+        "alias": [
+            "paddle.fluid.layers.nn.hard_swish"
+        ],
+        "update_to": "paddle.nn.functional.hardswish",
+        "args_list": [
+            "x",
+            "threshold",
+            "scale",
+            "offset",
+            "name"
+        ],
+        "args_change": [
+            [
+                "threshold",
+                ""
+            ],
+            [
+                "scale",
+                ""
+            ],
+            [
+                "offset",
+                ""
+            ]
+        ]
     },
     "paddle.fluid.layers.nn.log_loss": {
         "alias": [
@@ -2086,7 +2373,7 @@ change_spec = {
         "args_change": [
             [
                 "input",
-                "a"
+                "x"
             ],
             [
                 "axes",
@@ -2118,7 +2405,13 @@ change_spec = {
         "alias": [
             "paddle.fluid.layers.loss.cross_entropy"
         ],
-        "warning": " this api is update to paddle.nn.functional.cross_entropy"
+        "args_list": [
+            "input",
+            "label",
+            "soft_label",
+            "ignore_index"
+        ],
+        "update_to": "paddle.nn.functional.cross_entropy"
     },
     "paddle.fluid.layers.tensor.range": {
         "alias": [
@@ -2199,6 +2492,12 @@ change_spec = {
             "paddle.fluid.layers.margin_rank_loss"
         ],
         "warning": "this api is update to paddle.nn.functional.margin_ranking_loss"
+    },
+    "paddle.fluid.layers.DynamicRNN": {
+        "alias": [
+            "paddle.fluid.layers.control_flow.DynamicRNN"
+        ],
+        "warning": "this api is update to paddle.nn.RNN"
     },
     # manual check
     "paddle.fluid.layers.greater_equal": {
@@ -2330,6 +2629,34 @@ change_spec = {
             "paddle.fluid.is_compiled_with_cuda"
         ],
         "update_to": "paddle.is_compiled_with_cuda"
+    },
+    "paddle.fluid.layers.nn.randn": {
+        "alias": [
+            "paddle.fluid.layers.randn"
+        ],
+        "update_to": "paddle.randn",
+        "args_list": [
+            "shape",
+            "out",
+            "dtype",
+            "device",
+            "stop_gradient",
+            "name"
+        ],
+        "args_change": [
+            [
+                "out",
+                ""
+            ],
+            [
+                "device",
+                ""
+            ],
+            [
+                "stop_gradient",
+                ""
+            ]
+        ]
     },
     "paddle.fluid.layers.nn.leaky_relu": {
         "alias": [
@@ -2467,6 +2794,20 @@ change_spec = {
             "paddle.fluid.dygraph.Conv2D"
         ],
         "update_to": "paddle.nn.Conv2D",
+        "args_list": [
+            "num_channels",
+            "num_filters",
+            "filter_size",
+            "stride",
+            "padding",
+            "dilation",
+            "groups",
+            "param_attr",
+            "bias_attr",
+            "use_cudnn",
+            "act",
+            "dtype"
+        ],
         "args_change": [
             [
                 "num_channels",
@@ -2844,6 +3185,24 @@ change_spec = {
         ],
         "update_to": "paddle.tanh"
     },
+    "paddle.fluid.layers.tanh": {
+        "alias": [
+            "paddle.fluid.layers.ops.tanh"
+        ],
+        "update_to": "paddle.tanh"
+    },
+    "paddle.fluid.layers.Categorical": {
+        "alias": [
+            "paddle.fluid.layers.distributions.Categorical"
+        ],
+        "update_to": "paddle.distribution.Categorical",
+    },
+    "paddle.fluid.dygraph.InstanceNorm": {
+        "alias": [
+            "paddle.fluid.dygraph.nn.InstanceNorm"
+        ],
+        "warning": "this api is update to paddle.nn.InstanceNorm1/2/3D, you can get more information in API Docs.",
+    },
     "paddle.fluid.layers.nn.instance_norm": {
         "alias": [
             "paddle.fluid.layers.instance_norm"
@@ -2984,14 +3343,26 @@ change_spec = {
             ]
         ]
     },
+    "paddle.fluid.layers.deformable_conv": {
+        "alias": [
+            "paddle.fluid.layers.nn.deformable_conv"
+        ],
+        "warning": "this api is update to paddle.static.nn.deform_conv2d or paddle.vision.ops.deform_conv2d"
+    },
     "paddle.fluid.metrics.Accuracy": {
         "update_to": "paddle.metric.Accuracy",
+    },
+    "paddle.fluid.initializer.NumpyArrayInitializer": {
+        "update_to": "paddle.nn.initializer.Assign",
     },
     "paddle.fluid.layers.assign": {
         "alias": [
             "paddle.fluid.layers.tensor.assign"
         ],
-        "update_to": "paddle.nn.functional.assign",
+        "update_to": "paddle.assign",
+    },
+    "paddle.fluid.initializer.BilinearInitializer": {
+        "update_to": "paddle.nn.initializer.Bilinear"
     },
     "paddle.fluid.layers.sin": {
         "alias": [
@@ -3083,6 +3454,25 @@ change_spec = {
             "paddle.fluid.framework.require_version"
         ],
         "update_to": "paddle.utils.require_version"
+    },
+    "paddle.fluid.disable_dygraph": {
+        "alias": [
+            "paddle.fluid.dygraph.disable_dygraph",
+            "paddle.fluid.dygraph.base.disable_dygraph",
+            "paddle.fluid.dygraph.disable_imperative",
+            "paddle.fluid.dygraph.base.disable_imperative",
+            "paddle.fluid.disable_imperative"
+        ],
+        "update_to": "paddle.enable_static"
+    },
+    "paddle.fluid.layers.dynamic_lstmp": {
+        "warning": "this api is update to paddle.nn.LSTM",
+    },
+    "paddle.fluid.layers.lstm_unit": {
+        "warning": "this api is update to paddle.nn.LSTMCell",
+    },
+    "paddle.fluid.install_check.run_check": {
+        "update_to": "paddle.utils.run_check",
     },
     "paddle.fluid.layers.LSTMCell": {
         "warning": "this api is update to paddle.nn.LSTMCell",
@@ -3192,6 +3582,58 @@ change_spec = {
             "overwrite": "this args is deleted in this version."
         }
     },
+    "paddle.fluid.optimizer.RMSPropOptimizer": {
+        "alias": [
+            "paddle.fluid.optimizer.RMSProp"
+        ],
+        "update_to": "paddle.optimizer.RMSProp",
+        "args_list": [
+            "learning_rate",
+            "rho",
+            "epsilon",
+            "momentum",
+            "centered",
+            "parameter_list",
+            "regularization",
+            "grad_clip",
+            "name"
+        ],
+        "args_change": [
+            [
+                "parameter_list",
+                "parameters"
+            ],
+            [
+                "regularization",
+                "weight_decay"
+            ]
+        ]
+    },
+    "paddle.fluid.optimizer.AdadeltaOptimizer": {
+        "alias": [
+            "paddle.fluid.optimizer.Adadelta"
+        ],
+        "update_to": "paddle.optimizer.Adadelta",
+        "args_list": [
+            "learning_rate",
+            "epsilon",
+            "rho",
+            "parameter_list",
+            "regularization",
+            "grad_clip",
+            "name"
+        ],
+        "args_change": [
+            [
+                "parameter_list",
+                "parameters"
+            ],
+            [
+                "regularization",
+                "weight_decay"
+            ]
+        ]
+    },
     "paddle.fluid.optimizer.AdamaxOptimizer": {
         "alias": [
             "paddle.fluid.optimizer.Adamax"
@@ -3295,7 +3737,51 @@ change_spec = {
             ]
         ]
     },
+    "paddle.fluid.layers.clip_by_norm": {
+        "alias": [
+            "paddle.fluid.layers.nn.clip_by_norm"
+        ],
+        "warning": "this api is update to paddle.nn.ClipGradByNorm"
+    },
+    "paddle.fluid.clip.GradientClipByNorm": {
+        "warning": "this api is update to paddle.nn.ClipGradByNorm"
+    },
+    "paddle.fluid.clip.GradientClipByValue": {
+        "warning": "this api is update to paddle.nn.ClipGradByValue"
+    },
+    "paddle.fluid.clip.GradientClipByGlobalNorm": {
+        "warning": "this api is update to paddle.nn.ClipGradByGlobalNorm"
+    },
+    "paddle.fluid.layers.dynamic_gru": {
+        "warning": "this api is update to paddle.nn.GRU"
+    },
     "paddle.fluid.layers.GRUCell": {
         "warning": "this api is update to paddle.nn.GRUCell"
+    },
+    "paddle.fluid.layers.gru_unit": {
+        "warning": "this api is update to paddle.nn.GRUCell"
+    },
+    "paddle.fluid.layers.logsigmoid": {
+        "alias": [
+            "paddle.fluid.layers.ops.logsigmoid"
+        ],
+        "update_to": "paddle.nn.functional.log_sigmoid"
+    },
+    "paddle.fluid.io.load_vars": {
+        "update_to": "paddle.static.load_vars"
+    },
+    "paddle.fluid.dygraph.GRUUnit": {
+        "alias": [
+            "paddle.fluid.dygraph.nn.GRUUnit"
+        ],
+        "update_to": "paddle.nn.GRUCell"
+    },    
+    "paddle.fluid.dygraph.ProgramTranslator": {
+        "alias": [
+            "paddle.fluid.dygraph.dygraph_to_static.ProgramTranslator",
+            "paddle.fluid.dygraph.dygraph_to_static.program_translator.ProgramTranslator",
+            "paddle.fluid.dygraph.ProgramTranslator"
+        ],
+        "update_to": "paddle.nn.GRUCell"
     }
 }
