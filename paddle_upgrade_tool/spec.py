@@ -30,6 +30,12 @@ change_spec = {
             ]
         ]
     },
+    "paddle.fluid.layers.warpctc": {
+        "warning": "this api is update to paddle.nn.functional.ctc_loss"
+    },
+    "paddle.fluid.layers.Uniform": {
+        "update_to": "paddle.distribution.Uniform"
+    },
     "paddle.fluid.initializer.Uniform": {
         "alias": [
             "paddle.fluid.initializer.UniformInitializer"
@@ -313,7 +319,30 @@ change_spec = {
         ],
         "update_to": "paddle.static.nn.multi_box_head"
     },
+    "paddle.fluid.layers.clamp": {
+        "args_list": [
+            "input",
+            "min",
+            "max",
+            "output",
+            "name"
+        ],
+        "args_change":[
+            [
+                "input",
+                "x"
+            ],
+            [
+                "output",
+                ""
+            ]
+        ],
+        "warning": "this api is update to paddle.save"
+    },
     "paddle.fluid.save": {
+        "alias": [
+            "paddle.fluid.io.save"
+        ],
         "warning": "this api is update to paddle.save"
     },
     "paddle.fluid.layers.load": {
@@ -322,23 +351,23 @@ change_spec = {
         ],
         "warning": "this api is update to paddle.load"
     },
-    "paddle.fluid.layers.cosine_decay": {
+    "paddle.fluid.layers.exponential_decay": {
         "alias": [
-            "paddle.fluid.layers.learning_rate_scheduler.cosine_decay"
+            "paddle.fluid.layers.learning_rate_scheduler.exponential_decay"
         ],
-        "warning": "this api is update to paddle.optimizer.lr.CosineAnnealingDecay"
+        "warning": "this api is update to paddle.optimizer.lr.ExponentialDecay"
+    },
+    "paddle.fluid.layers.inverse_time_decay": {
+        "alias": [
+            "paddle.fluid.layers.learning_rate_scheduler.inverse_time_decay"
+        ],
+        "warning": "this api is update to paddle.optimizer.lr.InverseTimeDecay"
     },
     "paddle.fluid.dygraph.InverseTimeDecay": {
         "alias": [
             "paddle.fluid.dygraph.learning_rate_scheduler.InverseTimeDecay"
         ],
         "warning": "this api is update to paddle.optimizer.lr.InverseTimeDecay"
-    },
-    "paddle.fluid.layers.brelu": {
-        "alias": [
-            "paddle.fluid.layers.nn.brelu"
-        ],
-        "update_to": "paddle.nn.functional.activation.brelu"
     },
     "paddle.fluid.layers.asin": {
         "alias": [
@@ -354,6 +383,9 @@ change_spec = {
     },
     "paddle.fluid.metrics.Auc": {
         "warning": "this api is update to paddle.metric.Auc"
+    },
+    "paddle.fluid.layers.lstm": {
+        "warning": "this api is update to paddle.nn.LSTM"
     },
     "paddle.fluid.layers.auc": {
         "alias": [
@@ -386,6 +418,28 @@ change_spec = {
             [
                 "inplace",
                 ""
+            ]
+        ]
+    },
+    "paddle.fluid.layers.lrn": {
+        "update_to": "paddle.nn.functional.local_response_norm",
+        "args_list": [
+            "input",
+            "n",
+            "k"
+            "alpha",
+            "beta",
+            "name",
+            "data_format"
+        ],
+        "args_change": [
+            [
+                "input",
+                "x"
+            ],
+            [
+                "n",
+                "size"
             ]
         ]
     },
@@ -433,12 +487,6 @@ change_spec = {
             "paddle.fluid.dygraph.ExponentialDecay"
         ],
         "warning": "this api is update to paddle.optimizer.lr.ExponentialDecay"
-    },
-    "paddle.fluid.layers.detection.ssd_loss": {
-        "alias": [
-            "paddle.fluid.layers.ssd_loss"
-        ],
-        "update_to": "paddle.nn.functional.ssd_loss"
     },
     "paddle.fluid.layers.nn.logical_not": {
         "alias": [
@@ -491,7 +539,9 @@ change_spec = {
     "paddle.fluid.enable_imperative": {
         "alias": [
             "paddle.fluid.dygraph.base.enable_imperative",
-            "paddle.fluid.dygraph.enable_imperative"
+            "paddle.fluid.dygraph.enable_imperative",
+            "paddle.fluid.enable_dygraph",
+            "paddle.fluid.dygraph.enable_dygraph"
         ],
         "update_to": "paddle.disable_static"
     },
@@ -922,17 +972,55 @@ change_spec = {
         ],
         "warning": "this api is update to paddle.nn.functional.hsigmoid_loss",
     },
+    "paddle.fluid.layers.sigmoid_cross_entropy_with_logits": {
+        "warning": "this api is update to paddle.nn.functional.binary_cross_entropy",
+    },
     "paddle.fluid.layers.scatter_nd": {
         "alias": [
             "paddle.fluid.layers.nn.scatter_nd"
         ],
         "update_to": "paddle.scatter_nd"
     },
+    "paddle.fluid.layers.size": {
+        "update_to": "paddle.numel",
+        "args_list": [
+            "input"
+        ],
+        "args_change": [
+            [
+                "input",
+                "x"
+            ]
+        ]
+    },
+    "paddle.fluid.layers.sums": {
+        "update_to": "paddle.add_n",
+        "args_list": [
+            "input",
+            "out"
+        ],
+        "args_change": [
+            [
+                "input",
+                "inputs"
+            ],
+            [
+                "out",
+                ""
+            ]
+        ]
+    },
     "paddle.fluid.dygraph.LayerList": {
         "alias": [
             "paddle.fluid.dygraph.container.LayerList"
         ],
         "update_to": "paddle.nn.LayerList"
+    },
+    "paddle.fluid.layers.learning_rate_scheduler.piecewise_decay": {
+        "alias": [
+            "paddle.fluid.layers.piecewise_decay"
+        ],
+        "warning": "this api is update to paddle.optimizer.lr.PiecewiseDecay"
     },
     "paddle.fluid.dygraph.learning_rate_scheduler.PiecewiseDecay": {
         "alias": [
@@ -1279,10 +1367,7 @@ change_spec = {
     },
     "paddle.fluid.layers.transpose": {
         "alias": [
-            "paddle.fluid.layers.nn.transpose",
-            "paddle.complex.transpose",
-            "paddle.complex.tensor.transpose",
-            "paddle.complex.tensor.manipulation.transpose"
+            "paddle.fluid.layers.nn.transpose"
         ],
         "update_to": "paddle.transpose"
     },
@@ -1542,13 +1627,6 @@ change_spec = {
             "cond": "cond is deleted in this version"
         }
     },
-    "paddle.reader.decorator.multiprocess_reader": {
-        "alias": [
-            "paddle.fluid.io.multiprocess_reader",
-            "paddle.reader.multiprocess_reader"
-        ],
-        "update_to": "paddle.reader.decorator.multiprocess_reader"
-    },
     "paddle.fluid.layers.concat": {
         "alias": [
             "paddle.fluid.layers.tensor.concat"
@@ -1681,9 +1759,9 @@ change_spec = {
         ],
         "update_to": "paddle.static.gradients"
     },
-    "paddle.fluid.layers.control_flow.equal": {
+    "paddle.fluid.layers.equal": {
         "alias": [
-            "paddle.fluid.layers.equal"
+            "paddle.fluid.layers.control_flow.equal"
         ],
         "update_to": "paddle.equal",
         "args_list": [
@@ -2111,6 +2189,9 @@ change_spec = {
         ]
     },
     "paddle.fluid.initializer.MSRAInitializer": {
+        "alias":[
+            "paddle.fluid.initializer.MSRA"
+        ],
         "warning": "this api is update to paddle.nn.initializer.KaimingNormal or paddle.nn.initializer.KaimingUniform"
     },
     "paddle.fluid.initializer.TruncatedNormalInitializer": {
@@ -2120,6 +2201,9 @@ change_spec = {
         "warning": "this api is update to paddle.nn.initializer.TruncatedNormal"
     },
     "paddle.fluid.initializer.XavierInitializer": {
+        "alias": [
+            "paddle.fluid.initializer.Xavier"
+        ],
         "warning": "this api is update to XavierInitializer or paddle.nn.initializer.XavierUniform"
     },
     "paddle.fluid.layers.maxout": {
@@ -2850,28 +2934,8 @@ change_spec = {
         ],
         "update_to": "paddle.dist"
     },
-    "paddle.fluid.layers.addcmul": {
-        "alias": [
-            "paddle.fluid.layers.nn.addcmul"
-        ],
-        "update_to": "paddle.tensor.math.addcmul",
-        "args_list": [
-            "input",
-            "tensor1",
-            "tensor2",
-            "value",
-            "out",
-            "name"
-        ],
-        "args_change": [
-            [
-                "out",
-                ""
-            ]
-        ],    
-        "args_warning": {
-            "out": "this arg is deleted in this version."
-        }
+    "paddle.fluid.layers.mul": {
+        "warning": "this api is update to paddle.matmul"
     },
     "paddle.fluid.default_startup_program": {
         "alias": [
@@ -3362,6 +3426,9 @@ change_spec = {
         "update_to": "paddle.assign",
     },
     "paddle.fluid.initializer.BilinearInitializer": {
+        "alias": [
+            "paddle.fluid.initializer.Bilinear"
+        ],
         "update_to": "paddle.nn.initializer.Bilinear"
     },
     "paddle.fluid.layers.sin": {
