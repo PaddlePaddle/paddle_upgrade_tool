@@ -1779,12 +1779,6 @@ change_spec = {
             "cond": "this args is deleted in this version"
         }
     },
-    "paddle.fluid.ComplexVariable": {
-        "alias": [
-            "paddle.fluid.framework.ComplexVariable"
-        ],
-        "warning": "this api is update to paddle.ComplexTensor",
-    },
     "paddle.fluid.layers.split": {
         "alias": [
             "paddle.fluid.layers.nn.split"
@@ -2359,12 +2353,6 @@ change_spec = {
             "paddle.fluid.dygraph.L1Loss"
         ],
         "update_to": "paddle.nn.L1Loss",
-    },
-    "paddle.fluid.io.batch": {
-        "alias": [
-            "paddle.batch"
-        ],
-        "update_to": "paddle.batch"
     },
     "paddle.fluid.layers.nn.gather_nd": {
         "alias": [
@@ -3494,12 +3482,6 @@ change_spec = {
     },
     "paddle.fluid.dataset.QueueDataset": {
         "update_to": "paddle.distributed.QueueDataset"
-    },
-    "paddle.fluid.layers.iou_similarity": {
-        "alias": [
-            "paddle.fluid.layers.detection.iou_similarity"
-        ],
-        "update_to": "paddle.nn.functional.iou_similarity"
     },
     "paddle.fluid.metrics.Precision": {
         "update_to": "paddle.metric.Precision",
